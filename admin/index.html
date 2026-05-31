@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - إدارة المستخدمين</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h1>لوحة التحكم</h1>
+                    <p>إدارة المستخدمين والصلاحيات</p>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+                    <button class="theme-btn" onclick="goInventory()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:8px">المخزون</button>
+                    <button class="theme-btn" onclick="logout()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:8px">تسجيل الخروج</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <h2>المستخدمين</h2>
+            <button onclick="showAddUserModal()">+ إضافة مستخدم</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>اسم المستخدم</th>
+                        <th>الدور</th>
+                        <th>صلاحية التعديل</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="info-box">
+            <strong>ملاحظة:</strong> المستخدم صاحب دور <strong>admin</strong> لا يمكن حذفه. عندما تسجل الخروج، سيطلب منك اسم المستخدم وكلمة المرور مرة أخرى.
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">إضافة مستخدم</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+
+    <script src="script.js?v=2"></script>
+</body>
+</html>

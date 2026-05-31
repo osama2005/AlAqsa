@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المخزون - مستشفى شهداء الأقصى</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h1>نظام إدارة المخزون</h1>
+                    <p>مستشفى شهداء الأقصى - دير البلح</p>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="theme-btn" onclick="showColorsPanel()" style="background:rgba(255,255,255,0.2);font-size:16px;width:auto;padding:0 12px;border-radius:8px" title="تخصيص الألوان">🎨</button>
+                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+                    <button class="theme-btn" onclick="logout()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:8px">تسجيل الخروج</button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab active" data-tab="inventory" onclick="switchTab('inventory')">المخزون</button>
+            <button class="tab" data-tab="incoming" onclick="switchTab('incoming')">الوارد / الإضافة</button>
+            <button class="tab" data-tab="outgoing" onclick="switchTab('outgoing')">الصادر / المنصرف</button>
+            <button class="tab" data-tab="loan" onclick="switchTab('loan')">الإعارة</button>
+            <button class="tab" data-tab="kahana" onclick="switchTab('kahana')">الكهنة</button>
+        </nav>
+
+        <!-- المخزون -->
+        <section id="tab-inventory" class="tab-content active">
+            <div class="toolbar">
+                <h2>جدول الأرصدة والبيانات الأساسية</h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button onclick="showAddItemModal()">+ إضافة صنف جديد</button>
+                    <button onclick="document.getElementById('excelInput').click()" style="background:#c8a24e">📥 رفع Excel</button>
+                    <button onclick="exportExcel('inventory')" style="background:#23995e">📤 تصدير Excel</button>
+                    <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>كود الصنف</th>
+                            <th>كود وزارة</th>
+                            <th>اسم الصنف</th>
+                            <th>الوحدة</th>
+                            <th>التصنيف</th>
+                            <th>النوع</th>
+                            <th>رصيد أول المدة</th>
+                            <th>الوارد</th>
+                            <th>الصادر</th>
+                            <th>الرصيد المتبقي</th>
+                            <th>السعر</th>
+                            <th>ملاحظات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- الوارد / الإضافة -->
+        <section id="tab-incoming" class="tab-content">
+            <div class="toolbar">
+                <h2>تسجيل البضائع المستلمة</h2>
+                <div style="display:flex;gap:8px">
+                    <button onclick="showAddIncomingModal()">+ إضافة وارد جديد</button>
+                    <button onclick="exportExcel('incoming')" style="background:#23995e">تصدير Excel</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اليوم</th>
+                            <th>التاريخ</th>
+                            <th>كود الصنف</th>
+                            <th>كود وزارة</th>
+                            <th>اسم الصنف</th>
+                            <th>الوحدة</th>
+                            <th>التصنيف</th>
+                            <th>النوع</th>
+                            <th>الكمية</th>
+                            <th>الجهة الوارد منها</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                            <th>ملاحظات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="incomingTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- الصادر / المنصرف -->
+        <section id="tab-outgoing" class="tab-content">
+            <div class="toolbar">
+                <h2>تسجيل البضائع المصروفة للأقسام</h2>
+                <div style="display:flex;gap:8px">
+                    <button onclick="showAddOutgoingModal()">+ إضافة صادر جديد</button>
+                    <button onclick="exportExcel('outgoing')" style="background:#23995e">تصدير Excel</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اليوم</th>
+                            <th>التاريخ</th>
+                            <th>كود الصنف</th>
+                            <th>كود وزارة</th>
+                            <th>اسم الصنف</th>
+                            <th>الوحدة</th>
+                            <th>التصنيف</th>
+                            <th>النوع</th>
+                            <th>الكمية</th>
+                            <th>الجهة المصروف لها</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                            <th>ملاحظات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="outgoingTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- الإعارة -->
+        <section id="tab-loan" class="tab-content">
+            <div class="toolbar">
+                <h2>المعدات الطبية المعارة</h2>
+                <div style="display:flex;gap:8px">
+                    <button onclick="showAddLoanModal()">+ إضافة إعارة جديدة</button>
+                    <button onclick="exportExcel('loan')" style="background:#23995e">تصدير Excel</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>كود الصنف</th>
+                            <th>كود وزارة</th>
+                            <th>اسم الصنف</th>
+                            <th>الوحدة</th>
+                            <th>التصنيف</th>
+                            <th>رصيد أول المدة</th>
+                            <th>الوارد</th>
+                            <th>الصادر</th>
+                            <th>الرصيد المتبقي</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loanTableBody"></tbody>
+                </table>
+            </div>
+            <div class="toolbar" style="margin-top:20px">
+                <h3>سجل الإعارة الوارد</h3>
+                <button onclick="showAddLoanIncomingModal()">+ إضافة وارد إعارة</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اليوم</th>
+                            <th>التاريخ</th>
+                            <th>كود الصنف</th>
+                            <th>اسم الصنف</th>
+                            <th>الكمية</th>
+                            <th>الجهة الوارد منها</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loanIncomingBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- الكهنة -->
+        <section id="tab-kahana" class="tab-content">
+            <div class="toolbar">
+                <h2>الكهنة</h2>
+                <div style="display:flex;gap:8px">
+                    <button onclick="showAddKahanaModal()">+ إضافة</button>
+                    <button onclick="exportExcel('kahana')" style="background:#23995e">تصدير Excel</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>التفاصيل</th>
+                            <th>ملاحظات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kahanaTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">إضافة</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+
+    <script src="script.js?v=2"></script>
+</body>
+</html>
