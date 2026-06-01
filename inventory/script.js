@@ -239,6 +239,30 @@ function clearCpCell() {
     save(); renderAll();
 }
 
+// ---- Live Clock ----
+function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const d = now.getDate(), m = months[now.getMonth()], y = now.getFullYear(), day = days[now.getDay()];
+    const el = document.getElementById('liveClock');
+    if (el) el.innerHTML = `<span class="clock-time">${time}</span><span class="clock-sep">|</span><span class="clock-date">${day}، ${d} ${m} ${y}</span>`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ---- Active Session Heartbeat ----
+function setActiveHeartbeat() {
+    const user = safeParse('inv_current_user', null);
+    if (!user) return;
+    const sessions = safeParse('inv_sessions', {});
+    sessions[user.username] = { role: user.role, lastActive: Date.now() };
+    localStorage.setItem('inv_sessions', JSON.stringify(sessions));
+}
+setInterval(setActiveHeartbeat, 15000);
+setActiveHeartbeat();
+
 // ---- Auth ----
 (function checkAuth() {
     const user = safeParse('inv_current_user', null);
@@ -602,134 +626,17 @@ function exportExcel(section) {
     } else if (section === 'kahana') {
         data = kahana.map(i => ({ 'الاسم': i.name, 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '' }));
         name = 'الكهنة';
+    } else if (section === 'loanIncoming') {
+        data = loanIncoming.map(r => ({
+            'اليوم': r.day, 'التاريخ': r.date, 'كود': r.code,
+            'الاسم': r.name, 'الكمية': r.qty, 'الجهة': r.source,
+            'السعر': r.price, 'الإجمالي': r.total
+        }));
+        name = 'وارد الإعارة';
     }
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, name);
     XLSX.writeFile(wb, `مستشفى_الأقصى_${name}_${dateStr().replace(/\//g,'-')}.xlsx`);
-}
-
-// ---- Import Excel ----
-function detectCol(row, aliases) {
-    const keys = Object.keys(row);
-    for (const alias of aliases) {
-        const found = keys.find(k => k.trim() === alias);
-        if (found) return String(row[found]).trim();
-    }
-    for (const alias of aliases) {
-        const found = keys.find(k => k.trim().replace(/\s+/g, ' ') === alias);
-        if (found) return String(row[found]).trim();
-    }
-    for (const alias of aliases) {
-        const found = keys.find(k => k.includes(alias) || alias.includes(k));
-        if (found) return String(row[found]).trim();
-    }
-    return '';
-}
-
-function importExcel(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-            if (rows.length === 0) { alert('الملف فارغ'); return; }
-            const headers = rows[0] ? Object.keys(rows[0]) : [];
-            const pending = [];
-            const errors = [];
-            rows.forEach((row, i) => {
-                const code = detectCol(row, ['كود الصنف', 'code', 'Code', 'COD', 'الكود', 'الرمز', 'رقم الصنف']);
-                if (!code) { errors.push(`السطر ${i+2}: كود الصنف مطلوب`); return; }
-                if (inventory.some(x => x.code === code)) { errors.push(`السطر ${i+2}: الكود "${code}" موجود مسبقاً`); return; }
-                const name = detectCol(row, ['اسم الصنف', 'name', 'Name', 'الاسم', 'اسم', 'الصنف']);
-                const ministryCode = detectCol(row, ['كود وزارة', 'ministryCode', 'وزارة', 'كود الوزارة']);
-                const unit = detectCol(row, ['الوحدة', 'unit', 'Unit', 'وحدة']);
-                const category = detectCol(row, ['التصنيف', 'category', 'Category', 'تصنيف', 'قسم']);
-                const type = detectCol(row, ['النوع', 'type', 'Type', 'نوع']) || 'مستهلك';
-                const openingBalance = Number(detectCol(row, ['رصيد أول المدة', 'openingBalance', 'رصيد', 'رصيد اول المدة', 'الرصيد']) || 0);
-                const price = Number(detectCol(row, ['السعر', 'price', 'Price', 'سعر']) || 0);
-                const notes = detectCol(row, ['ملاحظات', 'notes', 'Notes', 'ملاحظة']);
-                pending.push({ code, ministryCode, name, unit, category, type, openingBalance, price, notes, totalIn: 0, totalOut: 0, remaining: 0 });
-            });
-            event.target.value = '';
-            if (pending.length === 0 && errors.length === 0) { alert('لم يتم العثور على بيانات صالحة'); return; }
-            if (pending.length === 0 && errors.length > 0 && errors.every(e => e.includes('كود الصنف مطلوب'))) {
-                alert('لم يتم العثور على عمود "كود الصنف" في الملف.\nالأعمدة الموجودة: ' + headers.join('، '));
-                return;
-            }
-            showImportPreview(pending, errors);
-        } catch(ex) { alert('خطأ في قراءة الملف: ' + ex.message); event.target.value = ''; }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function showImportPreview(pending, errors) {
-    window._impChecked = pending.map(() => true);
-    const rowsHtml = pending.map((item, i) => `<tr>
-        <td><input type="checkbox" class="imp-cb" data-idx="${i}" checked onchange="toggleImpRow(${i})"></td>
-        <td>${esc(item.code)}</td>
-        <td>${esc(item.ministryCode)}</td>
-        <td>${esc(item.name)}</td>
-        <td>${esc(item.unit)}</td>
-        <td>${esc(item.category)}</td>
-        <td>${esc(item.type)}</td>
-        <td>${item.openingBalance}</td>
-        <td>${item.price}</td>
-        <td>${esc(item.notes)}</td>
-    </tr>`).join('');
-    const errorsHtml = errors.length ? `<div style="color:#ce1126;margin-top:10px;padding:10px;background:#fff0f0;border-radius:8px"><strong>⚠️ تم تخطي ${errors.length} سطر:</strong><br>${errors.join('<br>')}</div>` : '';
-    openModal('معاينة بيانات الاستيراد', `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="color:#555">تم العثور على <strong>${pending.length}</strong> صنف. اختر ما تريد إضافته:</span>
-            <div style="display:flex;gap:6px;font-size:12px">
-                <label style="cursor:pointer"><input type="checkbox" checked onchange="toggleAllImp(this.checked)"> تحديد الكل</label>
-            </div>
-        </div>
-        <div style="max-height:350px;overflow:auto;border:1px solid #ddd;border-radius:8px">
-            <table style="font-size:12px">
-                <thead><tr>
-                    <th style="width:32px"></th>
-                    <th>كود</th><th>كود وزارة</th><th>الاسم</th><th>الوحدة</th><th>تصنيف</th><th>نوع</th><th>رصيد</th><th>سعر</th><th>ملاحظات</th>
-                </tr></thead>
-                <tbody>${rowsHtml || '<tr><td colspan="10" style="text-align:center;color:#999">لا توجد بيانات</td></tr>'}</tbody>
-            </table>
-        </div>
-        ${errorsHtml}
-        <div style="display:flex;gap:8px;margin-top:15px">
-            <button class="save-btn" onclick="confirmImport()" id="confirmImportBtn" ${pending.length ? '' : 'disabled'}>✅ تأكيد الإضافة</button>
-            <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
-        </div>
-    `);
-    window._pendingImport = pending;
-}
-
-function toggleImpRow(idx) {
-    if (window._impChecked) window._impChecked[idx] = !window._impChecked[idx];
-}
-
-function toggleAllImp(checked) {
-    document.querySelectorAll('.imp-cb').forEach(cb => cb.checked = checked);
-    if (window._impChecked) window._impChecked = window._impChecked.map(() => checked);
-}
-
-function confirmImport() {
-    const all = window._pendingImport || [];
-    const checked = window._impChecked || [];
-    const items = all.filter((_, i) => checked[i]);
-    if (items.length === 0) { alert('لم تختر أي صنف للإضافة'); return; }
-    items.forEach(item => {
-        item.remaining = item.openingBalance + item.totalIn - item.totalOut;
-        inventory.push(item);
-    });
-    delete window._pendingImport;
-    delete window._impChecked;
-    save();
-    renderAll();
-    closeModal();
-    alert(`✅ تم إضافة ${items.length} صنف بنجاح`);
 }
 
 // =============================================
@@ -742,12 +649,22 @@ function calcItemRemaining() {
     document.getElementById('item_remaining').value = opening + tin - tout;
 }
 
+function getNextItemCode() {
+    let max = 0;
+    inventory.forEach(i => {
+        const n = parseInt(i.code, 10);
+        if (!isNaN(n) && n > max) max = n;
+    });
+    return String(max + 1);
+}
+
 function showAddItemModal() {
+    const nextCode = getNextItemCode();
     openModal('إضافة صنف جديد', `
         <div class="form-grid">
             <div class="form-group">
                 <label>كود الصنف</label>
-                <input type="text" id="item_code" placeholder="مثال: ITM001">
+                <input type="text" id="item_code" value="${nextCode}" readonly>
             </div>
             <div class="form-group">
                 <label>كود وزارة</label>
@@ -1354,6 +1271,7 @@ function deleteLoan(index) {
     if (!item) return;
     loanItems.splice(index, 1);
     loanIncoming = loanIncoming.filter(r => r.code !== item.code);
+    SECT_MAP.loanIncoming = loanIncoming;
     save();
     renderAll();
 }

@@ -7,6 +7,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
@@ -16,6 +19,7 @@
                 <div>
                     <h1>لوحة التحكم</h1>
                     <p>إدارة المستخدمين والصلاحيات</p>
+                    <div id="liveClock" class="live-clock"></div>
                 </div>
                 <div style="display:flex;gap:8px">
                     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -24,6 +28,11 @@
                 </div>
             </div>
         </header>
+
+        <div class="active-box">
+            <h3>🟢 المستخدمون النشطون حالياً</h3>
+            <div id="activeUsersList" class="active-list">جاري التحميل...</div>
+        </div>
 
         <div class="toolbar">
             <h2>المستخدمين</h2>

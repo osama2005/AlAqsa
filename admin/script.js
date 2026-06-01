@@ -4,6 +4,18 @@ function safeParse(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch(e) { return fallback; }
 }
 
+function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const d = now.getDate(), m = months[now.getMonth()], y = now.getFullYear(), day = days[now.getDay()];
+    const el = document.getElementById('liveClock');
+    if (el) el.innerHTML = `<span class="clock-time">${time}</span><span class="clock-sep">|</span><span class="clock-date">${day}، ${d} ${m} ${y}</span>`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
 function playSound(type) {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -44,6 +56,14 @@ function saveUsers(users) {
 
 function esc(str) {
     return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setActiveHeartbeat() {
+    const user = safeParse('inv_current_user', null);
+    if (!user) return;
+    const sessions = safeParse('inv_sessions', {});
+    sessions[user.username] = { role: user.role, lastActive: Date.now() };
+    localStorage.setItem('inv_sessions', JSON.stringify(sessions));
 }
 
 function toggleTheme() {
@@ -199,5 +219,40 @@ function closeModal() {
     document.getElementById('modalOverlay').classList.remove('active');
     document.getElementById('modal').classList.remove('active');
 }
+
+// ---- Active Users Monitor ----
+function getActiveUsers() {
+    const sessions = safeParse('inv_sessions', {});
+    const now = Date.now();
+    const TIMEOUT = 60000;
+    const active = [];
+    for (const [username, data] of Object.entries(sessions)) {
+        if (data && data.lastActive && (now - data.lastActive) < TIMEOUT) {
+            active.push({ username, role: data.role });
+        }
+    }
+    active.sort((a, b) => a.username.localeCompare(b.username));
+    return active;
+}
+
+function renderActiveUsers() {
+    const list = document.getElementById('activeUsersList');
+    const active = getActiveUsers();
+    if (active.length === 0) {
+        list.innerHTML = '<span style="color:#888;font-size:13px">لا يوجد مستخدمون نشطون</span>';
+        return;
+    }
+    list.innerHTML = active.map(u =>
+        `<span class="active-user-badge">
+            <span class="dot"></span>
+            ${esc(u.username)}
+            <span class="role-tag">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span>
+        </span>`
+    ).join('');
+}
+
+setActiveHeartbeat();
+setInterval(renderActiveUsers, 5000);
+renderActiveUsers();
 
 renderUsers();

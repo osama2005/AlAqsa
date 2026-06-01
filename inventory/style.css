@@ -25,7 +25,28 @@ header {
 }
 header h1 { font-size: 26px; }
 header p { font-size: 14px; opacity: 0.9; margin-top: 5px; }
-
+header .live-clock {
+    font-family: 'Amiri', Tahoma, Arial, sans-serif;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #fff;
+    direction: ltr;
+    display: inline-block;
+    backdrop-filter: blur(4px);
+}
+header .live-clock .clock-time {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+header .live-clock .clock-sep {
+    margin: 0 6px;
+    opacity: 0.6;
+}
 .tabs {
     display: flex;
     gap: 5px;
@@ -213,6 +234,10 @@ tr:hover { background: #f8f8f8; }
     outline: none;
     transition: 0.2s;
 }
+.form-group input[readonly] {
+    background: #e8e8e8;
+    cursor: default;
+}
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     border-color: #1a7a4c;
     box-shadow: 0 0 0 3px rgba(26,122,76,0.1);
@@ -269,6 +294,10 @@ body.dark .form-group input, body.dark .form-group select, body.dark .form-group
     background: #2a3a4a;
     border-color: #2a3a4a;
     color: #eee;
+}
+body.dark .form-group input[readonly] {
+    background: #1e2a3a;
+    color: #aaa;
 }
 body.dark .form-group input:focus, body.dark .form-group select:focus, body.dark .form-group textarea:focus {
     border-color: #c8a24e;

@@ -7,6 +7,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=2">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -17,6 +20,7 @@
                 <div>
                     <h1>نظام إدارة المخزون</h1>
                     <p>مستشفى شهداء الأقصى - دير البلح</p>
+                    <div id="liveClock" class="live-clock"></div>
                 </div>
                 <div style="display:flex;gap:8px">
                     <button class="theme-btn" onclick="showColorsPanel()" style="background:rgba(255,255,255,0.2);font-size:16px;width:auto;padding:0 12px;border-radius:8px" title="تخصيص الألوان">🎨</button>
@@ -40,9 +44,7 @@
                 <h2>جدول الأرصدة والبيانات الأساسية</h2>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
                     <button onclick="showAddItemModal()">+ إضافة صنف جديد</button>
-                    <button onclick="document.getElementById('excelInput').click()" style="background:#c8a24e">📥 رفع Excel</button>
                     <button onclick="exportExcel('inventory')" style="background:#23995e">📤 تصدير Excel</button>
-                    <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
                 </div>
             </div>
             <div class="table-wrap">
