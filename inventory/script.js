@@ -324,6 +324,8 @@ function toggleTheme() {
     const isDark = document.body.classList.contains('dark');
     document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
+    const overlay = document.getElementById('themeOverlay');
+    if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
 }
 
 (function loadTheme() {

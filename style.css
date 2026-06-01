@@ -5,7 +5,30 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.4s;
+    transition: background 0.6s ease, color 0.6s ease;
+}
+body {
+    animation: fadeIn 0.4s ease;
+}
+.theme-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle, rgba(26,122,76,0.08), transparent 70%);
+    animation: none;
+}
+.theme-overlay.active {
+    animation: themeFlash 0.7s ease forwards;
+}
+@keyframes themeFlash {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+}
+body.dark .theme-overlay {
+    background: radial-gradient(circle, rgba(200,162,78,0.08), transparent 70%);
 }
 .login-box {
     background: #fff;
@@ -13,13 +36,10 @@ body {
     border-radius: 12px;
     box-shadow: 0 15px 40px rgba(0,0,0,0.15);
     width: 360px;
+    max-width: 92vw;
     border-top: 4px solid #1a7a4c;
     animation: slideUp 0.6s ease;
-}
-body {
-    animation: fadeIn 0.4s ease;
-}
-@keyframes fadeIn {
+}@keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
@@ -172,22 +192,22 @@ body.dark .live-clock {
     margin-top: 12px;
     background: #e8dcc8;
     color: #333;
-    font-size: 18px;
-    padding: 6px;
+    font-size: 14px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    display: flex;
+    border-radius: 8px;
+    width: auto;
+    height: auto;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     cursor: pointer;
     transition: 0.3s;
-    align-self: center;
 }
 .theme-btn:hover {
     background: #ddd0b8;
-    transform: none;
+    transform: translateY(-1px);
 }
 body.dark {
     background: #1a1a2e;
@@ -195,22 +215,14 @@ body.dark {
 body.dark .login-box {
     background: #1e2a3a;
     border-top-color: #c8a24e;
-    transition: background 0.4s, border-color 0.4s;
 }
-body.dark .login-box h2 {
-    color: #c8a24e;
-    transition: color 0.4s;
-}
-body.dark .login-subtitle { color: #888; }
-body.dark .input-group label {
-    color: #aaa;
-    transition: color 0.4s;
-}
+body.dark .login-box h2 { color: #c8a24e; }
+body.dark .login-subtitle { color: #888; transition: color 0.4s; }
+body.dark .input-group label { color: #aaa; }
 body.dark .input-wrap input {
     background: #2a3a4a;
     border-color: #2a3a4a;
     color: #eee;
-    transition: background 0.4s, border-color 0.4s, color 0.4s;
 }
 body.dark .input-wrap input:focus {
     border-color: #c8a24e;
@@ -224,10 +236,28 @@ body.dark .toggle-vis {
 body.dark button {
     background: linear-gradient(135deg, #c8a24e, #d4b06a);
     color: #1a1a2e;
-    transition: background 0.4s, color 0.4s;
 }
 body.dark .theme-btn {
     background: #2a3a4a;
     color: #c8a24e;
-    transition: background 0.4s, color 0.4s;
+}
+
+@media (max-width: 480px) {
+    .login-box { padding: 25px 18px; }
+    .login-box h2 { font-size: 18px; }
+    .input-wrap { flex-direction: column; }
+    .input-wrap input { width: 100%; }
+    .toggle-vis { width: 100%; min-width: unset; height: 40px; }
+    .live-clock .clock-time { font-size: 16px; }
+    .live-clock { font-size: 13px; }
+    .support-btn { font-size: 11px; padding: 6px 10px; }
+    .theme-btn { font-size: 12px; padding: 6px 12px; }
+}
+@media (max-width: 360px) {
+    .login-box { padding: 18px 12px; border-radius: 8px; }
+    .login-box h2 { font-size: 16px; }
+    button { padding: 10px; font-size: 14px; }
+    .live-clock { padding: 6px 10px; }
+    .live-clock .clock-time { font-size: 14px; }
+    .live-clock .clock-sep { margin: 0 3px; }
 }

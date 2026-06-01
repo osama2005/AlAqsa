@@ -103,13 +103,16 @@ function login() {
 
 function setThemeIcons(isDark) {
     const icon = isDark ? '☀️' : '🌙';
-    document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon);
+    const label = isDark ? ' فاتح' : ' الوضع الليلي';
+    document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon + label);
 }
 
 function toggleTheme() {
     const isDark = document.body.classList.toggle('dark');
     setThemeIcons(isDark);
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
+    const overlay = document.getElementById('themeOverlay');
+    if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
 }
 
 (function loadTheme() {
