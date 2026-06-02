@@ -7,6 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
@@ -14,6 +15,7 @@
 </head>
 <body>
     <div class="theme-overlay" id="themeOverlay"></div>
+    <div class="bg-overlay" id="bgOverlay"></div>
     <div class="container">
         <header>
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -22,22 +24,37 @@
                     <p>إدارة المستخدمين والصلاحيات</p>
                     <div id="liveClock" class="live-clock"></div>
                 </div>
-                <div style="display:flex;gap:8px">
-                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
-                    <button class="theme-btn" onclick="goInventory()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:8px">المخزون</button>
-                    <button class="theme-btn" onclick="logout()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:8px">تسجيل الخروج</button>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <div class="bg-dropdown">
+                        <button class="theme-btn" onclick="toggleBgDropdown()" id="bgBtn" title="تغيير الخلفية"><i class="fas fa-image"></i></button>
+                        <div class="bg-dropdown-menu" id="bgMenu">
+                            <div class="bg-grid">
+                                <button onclick="setBg('default')" data-bg="default"><span class="bg-dot" style="border:2px dashed #bbb"></span> بدون</button>
+                                <button onclick="setBg('earth')" data-bg="earth"><span class="bg-dot" style="background:#2d7d46"></span> الأرض</button>
+                                <button onclick="setBg('mars')" data-bg="mars"><span class="bg-dot" style="background:#c0392b"></span> المريخ</button>
+                                <button onclick="setBg('jupiter')" data-bg="jupiter"><span class="bg-dot" style="background:#d4a76a"></span> المشتري</button>
+                                <button onclick="setBg('moon')" data-bg="moon"><span class="bg-dot" style="background:#95a5a6"></span> القمر</button>
+                                <button onclick="setBg('mercury')" data-bg="mercury"><span class="bg-dot" style="background:#7f8c8d"></span> عطارد</button>
+                                <button onclick="setBg('venus')" data-bg="venus"><span class="bg-dot" style="background:#e67e22"></span> الزهرة</button>
+                                <button onclick="setBg('saturn')" data-bg="saturn"><span class="bg-dot" style="background:#d4a76a"></span> زحل</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn"><i class="fas fa-moon"></i></button>
+                    <button class="theme-btn" onclick="goInventory()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:10px"><i class="fas fa-boxes-stacked"></i> المخزون</button>
+                    <button class="theme-btn" onclick="logout()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:10px"><i class="fas fa-right-from-bracket"></i> تسجيل الخروج</button>
                 </div>
             </div>
         </header>
 
         <div class="active-box">
-            <h3>🟢 المستخدمون النشطون حالياً</h3>
+            <h3><i class="fas fa-circle" style="color:#27ae60;font-size:10px"></i> المستخدمون النشطون حالياً</h3>
             <div id="activeUsersList" class="active-list">جاري التحميل...</div>
         </div>
 
         <div class="toolbar">
             <h2>المستخدمين</h2>
-            <button onclick="showAddUserModal()">+ إضافة مستخدم</button>
+            <button onclick="showAddUserModal()"><i class="fas fa-plus"></i> إضافة مستخدم</button>
         </div>
 
         <div class="table-wrap">

@@ -69,7 +69,7 @@ function setActiveHeartbeat() {
 function toggleTheme() {
     document.body.classList.toggle('dark');
     const isDark = document.body.classList.contains('dark');
-    document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+    document.getElementById('themeBtn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
     const overlay = document.getElementById('themeOverlay');
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
@@ -79,9 +79,47 @@ function toggleTheme() {
     if (localStorage.getItem('inv_theme') === 'dark') {
         document.body.classList.add('dark');
         const btn = document.getElementById('themeBtn');
-        if (btn) btn.textContent = '☀️';
+        if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
     }
 })();
+
+/* === Background Selector === */
+const BG_MAP = {
+    default: null,
+    earth: '../photo/planet-earth-dark-3840x2160-26342.jpg',
+    mars: '../photo/mars-red-planet-3840x2160-26347.jpg',
+    jupiter: '../photo/jupiter-dark-3840x2160-26348.png',
+    moon: '../photo/moon-dark-3840x2160-26344.png',
+    mercury: '../photo/planet-mercury-dark-3840x2160-26345.png',
+    venus: '../photo/planet-venus-dark-3840x2160-26351.png',
+    saturn: '../photo/saturn-dark-3840x2160-26350.png',
+};
+
+function toggleBgDropdown() {
+    const menu = document.getElementById('bgMenu');
+    if (menu) menu.classList.toggle('show');
+}
+
+function setBg(name) {
+    const overlay = document.getElementById('bgOverlay');
+    const path = BG_MAP[name];
+    overlay.style.backgroundImage = path ? `url(${path})` : 'none';
+    localStorage.setItem('inv_bg', name);
+    document.querySelectorAll('#bgMenu button').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#bgMenu button[data-bg="${name}"]`);
+    if (btn) btn.classList.add('active');
+    const menu = document.getElementById('bgMenu');
+    if (menu) menu.classList.remove('show');
+}
+
+(function loadBg() {
+    setBg(localStorage.getItem('inv_bg') || 'default');
+})();
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('bgMenu');
+    if (menu && !e.target.closest('.bg-dropdown')) menu.classList.remove('show');
+});
 
 function goInventory() {
     window.location.href = '../inventory/index.html';
@@ -101,10 +139,10 @@ function renderUsers() {
         <tr>
             <td>${esc(u.username)}</td>
             <td><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
-            <td>${u.canEdit ? '✅ نعم' : '❌ لا'}</td>
+            <td>${u.canEdit ? '<i class="fas fa-check" style="color:#27ae60"></i> نعم' : '<i class="fas fa-xmark" style="color:#e74c3c"></i> لا'}</td>
             <td>
-                <button class="action-btn edit-btn" onclick="editUser(${i})">✏️</button>
-                ${u.role !== 'admin' ? `<button class="action-btn delete-btn" onclick="deleteUser(${i})">🗑️</button>` : ''}
+                <button class="action-btn edit-btn" onclick="editUser(${i})"><i class="fas fa-pen"></i></button>
+                ${u.role !== 'admin' ? `<button class="action-btn delete-btn" onclick="deleteUser(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -248,7 +286,7 @@ function renderActiveUsers() {
         `<span class="active-user-badge">
             <span class="dot"></span>
             ${esc(u.username)}
-            <span class="role-tag">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span>
+            <span class="role-tag"><i class="fas fa-${u.role === 'admin' ? 'crown' : 'user'}"></i> ${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span>
         </span>`
     ).join('');
 }

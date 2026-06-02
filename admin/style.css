@@ -1,4 +1,4 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Amiri', Tahoma, Arial, sans-serif; }
 body {
     background: #f5efe0;
     color: #333;
@@ -81,15 +81,19 @@ header .live-clock .clock-sep {
     background: #1a3a6c;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+    font-size: 13px;
+    transition: 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+    box-shadow: 0 1px 4px rgba(26,58,108,0.15);
 }
 .toolbar button:hover {
     background: #2a5a9e;
-    transform: translateY(-1px);
+    transform: scale(1.03);
+    box-shadow: 0 3px 12px rgba(26,58,108,0.25);
 }
+body.dark .toolbar button { box-shadow: 0 1px 4px rgba(200,162,78,0.15); }
+body.dark .toolbar button:hover { box-shadow: 0 3px 12px rgba(200,162,78,0.25); }
 
 .table-wrap {
     overflow-x: auto;
@@ -127,18 +131,19 @@ tr:hover { background: #f8f8f8; }
 .role-user { background: #e8dcc8; color: #333; }
 
 .action-btn {
-    padding: 4px 10px;
+    padding: 5px 11px;
     border: none;
-    border-radius: 5px;
+    border-radius: 9px;
     cursor: pointer;
     font-size: 12px;
     margin: 0 2px;
-    transition: 0.2s;
+    transition: 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .edit-btn { background: #3498db; color: #fff; }
-.edit-btn:hover { background: #2980b9; }
+.edit-btn:hover { background: #2980b9; transform: scale(1.08); box-shadow: 0 2px 8px rgba(52,152,219,0.3); }
 .delete-btn { background: #e74c3c; color: #fff; }
-.delete-btn:hover { background: #c0392b; }
+.delete-btn:hover { background: #c0392b; transform: scale(1.08); box-shadow: 0 2px 8px rgba(231,76,60,0.3); }
 
 .info-box {
     margin-top: 20px;
@@ -192,13 +197,20 @@ tr:hover { background: #f8f8f8; }
 }
 .modal-header h3 { color: #1a3a6c; }
 .close-btn {
-    background: none;
+    background: rgba(0,0,0,0.04);
     border: none;
-    font-size: 28px;
+    font-size: 20px;
     cursor: pointer;
     color: #999;
+    border-radius: 9px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
 }
-.close-btn:hover { color: #333; }
+.close-btn:hover { background: rgba(0,0,0,0.08); color: #333; transform: scale(1.06); }
 
 .form-grid {
     display: grid;
@@ -233,15 +245,16 @@ tr:hover { background: #f8f8f8; }
 .form-actions button {
     padding: 10px 25px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+    font-size: 13px;
+    transition: 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .form-actions .save-btn { background: #1a3a6c; color: #fff; }
-.form-actions .save-btn:hover { background: #2a5a9e; }
+.form-actions .save-btn:hover { background: #2a5a9e; transform: scale(1.03); }
 .form-actions .cancel-btn { background: #e0e0e0; color: #333; }
-.form-actions .cancel-btn:hover { background: #ccc; }
+.form-actions .cancel-btn:hover { background: #ccc; transform: scale(1.03); }
 
 .active-box {
     background: #fff;
@@ -294,19 +307,22 @@ tr:hover { background: #f8f8f8; }
     border-radius: 10px;
 }
 .theme-btn {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    font-size: 24px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 20px;
     cursor: pointer;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
+    border-radius: 11px;
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: 0.3s;
+    transition: 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-.theme-btn:hover { background: rgba(255,255,255,0.3); }
+.theme-btn:hover { background: rgba(255,255,255,0.28); transform: scale(1.06); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
 
 body.dark {
     background: #1a1a2e;
@@ -393,3 +409,74 @@ body.dark .theme-btn { background: rgba(255,255,255,0.15); }
     .toolbar h2 { font-size: 14px; }
     .toolbar button { font-size: 12px; padding: 6px 10px; }
 }
+
+/* === Background Image Selector === */
+.bg-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background 0.6s ease;
+}
+.bg-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    pointer-events: none;
+}
+.bg-dropdown { position: relative; display: inline-block; }
+.bg-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 1000;
+    min-width: 280px;
+    animation: fadeIn 0.15s ease;
+}
+.bg-dropdown-menu.show { display: block; }
+.bg-dropdown-menu .bg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+}
+.bg-dropdown-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    color: #333;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.12s;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.bg-dropdown-menu button:hover { background: #f0f0f0; }
+.bg-dropdown-menu button.active { background: #1a3a6c !important; color: #fff !important; }
+.bg-dot {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+body.dark .bg-dropdown-menu {
+    background: #1e2a3a;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+body.dark .bg-dropdown-menu button { color: #ddd; }
+body.dark .bg-dropdown-menu button:hover { background: #2a3a4a; }
+body.dark .bg-dropdown-menu button.active { background: #c8a24e !important; color: #1a1a2e !important; }

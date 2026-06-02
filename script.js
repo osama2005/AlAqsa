@@ -42,21 +42,19 @@ function toggleUserVis() {
     const btn = document.getElementById('toggleUserBtn');
     if (input.type === 'password') {
         input.type = 'text';
-        btn.textContent = '👁️';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
     } else {
         input.type = 'password';
-        btn.textContent = '👁️‍🗨️';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
     }
 }
 
 (function seed() {
-    const users = safeParse('inv_users', []);
-    if (!Array.isArray(users)) { localStorage.setItem('inv_users', JSON.stringify([])); return; }
-    const filtered = users.filter(u => u && u.username !== 'osama123');
-    if (!filtered.some(u => u.username === 'admin123')) {
-        filtered.push({ username: 'admin123', role: 'admin', canEdit: true });
+    if (!localStorage.getItem('inv_users')) {
+        localStorage.setItem('inv_users', JSON.stringify([
+            { username: 'admin123', role: 'admin', canEdit: true }
+        ]));
     }
-    localStorage.setItem('inv_users', JSON.stringify(filtered));
 })();
 
 function setActiveHeartbeat() {
@@ -101,10 +99,16 @@ function login() {
     }, 300);
 }
 
+(function loadTheme() {
+    if (localStorage.getItem('inv_theme') === 'dark') {
+        document.body.classList.add('dark');
+    }
+})();
+
 function setThemeIcons(isDark) {
-    const icon = isDark ? '☀️' : '🌙';
+    const icon = isDark ? 'fa-sun' : 'fa-moon';
     const label = isDark ? ' فاتح' : ' الوضع الليلي';
-    document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon + label);
+    document.querySelectorAll('.theme-toggle').forEach(b => b.innerHTML = `<i class="fas ${icon}"></i>${label}`);
 }
 
 function toggleTheme() {
@@ -115,9 +119,46 @@ function toggleTheme() {
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
 }
 
-(function loadTheme() {
-    if (localStorage.getItem('inv_theme') === 'dark') {
-        document.body.classList.add('dark');
-        setThemeIcons(true);
-    }
+(function initThemeBtn() {
+    const isDark = document.body.classList.contains('dark');
+    if (isDark) setThemeIcons(true);
 })();
+
+/* === Background Selector === */
+const BG_MAP = {
+    default: null,
+    earth: 'photo/planet-earth-dark-3840x2160-26342.jpg',
+    mars: 'photo/mars-red-planet-3840x2160-26347.jpg',
+    jupiter: 'photo/jupiter-dark-3840x2160-26348.png',
+    moon: 'photo/moon-dark-3840x2160-26344.png',
+    mercury: 'photo/planet-mercury-dark-3840x2160-26345.png',
+    venus: 'photo/planet-venus-dark-3840x2160-26351.png',
+    saturn: 'photo/saturn-dark-3840x2160-26350.png',
+};
+
+function toggleBgDropdown() {
+    const menu = document.getElementById('bgMenu');
+    if (menu) menu.classList.toggle('show');
+}
+
+function setBg(name) {
+    const overlay = document.getElementById('bgOverlay');
+    const path = BG_MAP[name];
+    overlay.style.backgroundImage = path ? `url(${path})` : 'none';
+    localStorage.setItem('inv_bg', name);
+    document.querySelectorAll('#bgMenu button').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#bgMenu button[data-bg="${name}"]`);
+    if (btn) btn.classList.add('active');
+    const menu = document.getElementById('bgMenu');
+    if (menu) menu.classList.remove('show');
+}
+
+(function loadBg() {
+    const saved = localStorage.getItem('inv_bg');
+    if (saved) setBg(saved);
+})();
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('bgMenu');
+    if (menu && !e.target.closest('.bg-dropdown')) menu.classList.remove('show');
+});
