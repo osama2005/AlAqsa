@@ -411,6 +411,442 @@ function closeModal() {
     document.getElementById('modal').classList.remove('active');
 }
 
+// ---- Recalc ----
+function recalcInventoryTotals(code) {
+    const item = inventory.find(i => i.code === code);
+    if (!item) return;
+    item.totalIn = incoming.filter(r => r.code === code).reduce((s, r) => s + Number(r.qty), 0);
+    item.totalOut = outgoing.filter(r => r.code === code).reduce((s, r) => s + Number(r.qty), 0);
+    item.remaining = (item.openingBalance || 0) + item.totalIn - item.totalOut;
+    save();
+}
+
+function recalcLoanTotals(code) {
+    const item = loanItems.find(i => i.code === code);
+    if (!item) return;
+    item.totalIn = loanIncoming.filter(r => r.code === code).reduce((s, r) => s + Number(r.qty), 0);
+    save();
+}
+
+// ---- Render ----
+function renderInventory() {
+    const tbody = document.getElementById('inventoryTableBody');
+    const c = SECT_KEYS.inventory;
+    tbody.innerHTML = inventory.map((item, i) => {
+        const remaining = item.remaining != null ? item.remaining : (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
+        return `<tr ${rowStyle(item)}>
+            <td ${tdStyle(item,'inventory',c[0])}>${esc(item.code)}</td>
+            <td ${tdStyle(item,'inventory',c[1])}>${esc(item.ministryCode)}</td>
+            <td ${tdStyle(item,'inventory',c[2])}>${esc(item.name)}</td>
+            <td ${tdStyle(item,'inventory',c[3])}>${esc(item.unit)}</td>
+            <td ${tdStyle(item,'inventory',c[4])}>${esc(item.category)}</td>
+            <td ${tdStyle(item,'inventory',c[5])}>${esc(item.type)}</td>
+            <td ${tdStyle(item,'inventory',c[6])}>${item.openingBalance || 0}</td>
+            <td ${tdStyle(item,'inventory',c[7])}>${item.totalIn || 0}</td>
+            <td ${tdStyle(item,'inventory',c[8])}>${item.totalOut || 0}</td>
+            <td ${tdStyle(item,'inventory',c[9])}>${remaining}</td>
+            <td ${tdStyle(item,'inventory',c[10])}>${item.price || 0}</td>
+            <td ${tdStyle(item,'inventory',c[11])}>${esc(item.notes || '')}</td>
+            <td>${canEdit ? `
+                ${getColorBtn(item, 'inventory', i)}
+                <button class="action-btn edit-btn" onclick="editInventory(${i})"><i class="fas fa-pen"></i></button>
+                <button class="action-btn delete-btn" onclick="deleteInventory(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderIncoming() {
+    const tbody = document.getElementById('incomingTableBody');
+    const c = SECT_KEYS.incoming;
+    tbody.innerHTML = incoming.map((rec, i) => {
+        return `<tr ${rowStyle(rec)}>
+        <td ${tdStyle(rec,'incoming',c[0])}>${esc(rec.day)}</td>
+        <td ${tdStyle(rec,'incoming',c[1])}>${esc(rec.date)}</td>
+        <td ${tdStyle(rec,'incoming',c[2])}>${esc(rec.code)}</td>
+        <td ${tdStyle(rec,'incoming',c[3])}>${esc(rec.ministryCode)}</td>
+        <td ${tdStyle(rec,'incoming',c[4])}>${esc(rec.name)}</td>
+        <td ${tdStyle(rec,'incoming',c[5])}>${esc(rec.unit)}</td>
+        <td ${tdStyle(rec,'incoming',c[6])}>${esc(rec.category)}</td>
+        <td ${tdStyle(rec,'incoming',c[7])}>${esc(rec.type)}</td>
+        <td ${tdStyle(rec,'incoming',c[8])}>${rec.qty}</td>
+        <td ${tdStyle(rec,'incoming',c[9])}>${esc(rec.source)}</td>
+        <td ${tdStyle(rec,'incoming',c[10])}>${rec.price}</td>
+        <td ${tdStyle(rec,'incoming',c[11])}>${rec.total}</td>
+        <td ${tdStyle(rec,'incoming',c[12])}>${esc(rec.notes || '')}</td>
+        <td>${canEdit ? `
+            ${getColorBtn(rec, 'incoming', i)}
+            <button class="action-btn edit-btn" onclick="editIncoming(${i})"><i class="fas fa-pen"></i></button>
+            <button class="action-btn delete-btn" onclick="deleteIncoming(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+        </td>
+    </tr>`}).join('');
+}
+
+function renderOutgoing() {
+    const tbody = document.getElementById('outgoingTableBody');
+    const c = SECT_KEYS.outgoing;
+    tbody.innerHTML = outgoing.map((rec, i) => {
+        return `<tr ${rowStyle(rec)}>
+        <td ${tdStyle(rec,'outgoing',c[0])}>${esc(rec.day)}</td>
+        <td ${tdStyle(rec,'outgoing',c[1])}>${esc(rec.date)}</td>
+        <td ${tdStyle(rec,'outgoing',c[2])}>${esc(rec.code)}</td>
+        <td ${tdStyle(rec,'outgoing',c[3])}>${esc(rec.ministryCode)}</td>
+        <td ${tdStyle(rec,'outgoing',c[4])}>${esc(rec.name)}</td>
+        <td ${tdStyle(rec,'outgoing',c[5])}>${esc(rec.unit)}</td>
+        <td ${tdStyle(rec,'outgoing',c[6])}>${esc(rec.category)}</td>
+        <td ${tdStyle(rec,'outgoing',c[7])}>${esc(rec.type)}</td>
+        <td ${tdStyle(rec,'outgoing',c[8])}>${rec.qty}</td>
+        <td ${tdStyle(rec,'outgoing',c[9])}>${esc(rec.destination)}</td>
+        <td ${tdStyle(rec,'outgoing',c[10])}>${rec.price}</td>
+        <td ${tdStyle(rec,'outgoing',c[11])}>${rec.total}</td>
+        <td ${tdStyle(rec,'outgoing',c[12])}>${esc(rec.notes || '')}</td>
+        <td>${canEdit ? `
+            ${getColorBtn(rec, 'outgoing', i)}
+            <button class="action-btn edit-btn" onclick="editOutgoing(${i})"><i class="fas fa-pen"></i></button>
+            <button class="action-btn delete-btn" onclick="deleteOutgoing(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+        </td>
+    </tr>`}).join('');
+}
+
+function renderLoan() {
+    const tbody = document.getElementById('loanTableBody');
+    const c = SECT_KEYS.loan;
+    tbody.innerHTML = loanItems.map((item, i) => {
+        const remaining = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
+        return `<tr ${rowStyle(item)}>
+            <td ${tdStyle(item,'loan',c[0])}>${esc(item.code)}</td>
+            <td ${tdStyle(item,'loan',c[1])}>${esc(item.ministryCode)}</td>
+            <td ${tdStyle(item,'loan',c[2])}>${esc(item.name)}</td>
+            <td ${tdStyle(item,'loan',c[3])}>${esc(item.unit)}</td>
+            <td ${tdStyle(item,'loan',c[4])}>${esc(item.category)}</td>
+            <td ${tdStyle(item,'loan',c[5])}>${item.openingBalance || 0}</td>
+            <td ${tdStyle(item,'loan',c[6])}>${item.totalIn || 0}</td>
+            <td ${tdStyle(item,'loan',c[7])}>${item.totalOut || 0}</td>
+            <td ${tdStyle(item,'loan',c[8])}>${remaining}</td>
+            <td>${canEdit ? `
+                ${getColorBtn(item, 'loan', i)}
+                <button class="action-btn edit-btn" onclick="editLoan(${i})"><i class="fas fa-pen"></i></button>
+                <button class="action-btn delete-btn" onclick="deleteLoan(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderLoanIncoming() {
+    const tbody = document.getElementById('loanIncomingBody');
+    const c = SECT_KEYS.loanIncoming;
+    tbody.innerHTML = loanIncoming.map((rec, i) => {
+        return `<tr ${rowStyle(rec)}>
+        <td ${tdStyle(rec,'loanIncoming',c[0])}>${esc(rec.day)}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[1])}>${esc(rec.date)}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[2])}>${esc(rec.code)}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[3])}>${esc(rec.name)}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[4])}>${rec.qty}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[5])}>${esc(rec.source)}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[6])}>${rec.price}</td>
+        <td ${tdStyle(rec,'loanIncoming',c[7])}>${rec.total}</td>
+        <td>${canEdit ? `
+            ${getColorBtn(rec, 'loanIncoming', i)}
+            <button class="action-btn edit-btn" onclick="editLoanIncoming(${i})"><i class="fas fa-pen"></i></button>
+            <button class="action-btn delete-btn" onclick="deleteLoanIncoming(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+        </td>
+    </tr>`}).join('');
+}
+
+function renderKahana() {
+    const tbody = document.getElementById('kahanaTableBody');
+    if (!tbody) return;
+    const c = SECT_KEYS.kahana;
+    tbody.innerHTML = kahana.map((item, i) => {
+        return `<tr ${rowStyle(item)}>
+        <td ${tdStyle(item,'kahana',c[0])}>${esc(item.name)}</td>
+        <td ${tdStyle(item,'kahana',c[1])}>${esc(item.details || '')}</td>
+        <td ${tdStyle(item,'kahana',c[2])}>${esc(item.notes || '')}</td>
+        <td>${canEdit ? `
+            ${getColorBtn(item, 'kahana', i)}
+            <button class="action-btn edit-btn" onclick="editKahana(${i})"><i class="fas fa-pen"></i></button>
+            <button class="action-btn delete-btn" onclick="deleteKahana(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
+        </td>
+    </tr>`}).join('');
+}
+
+function renderAll() {
+    renderInventory();
+    renderIncoming();
+    renderOutgoing();
+    renderLoan();
+    renderLoanIncoming();
+    renderKahana();
+}
+
+// ---- Export Excel ----
+function exportExcel(section) {
+    const wb = XLSX.utils.book_new();
+    let data, name;
+    if (section === 'inventory') {
+        data = inventory.map(i => ({
+            'كود الصنف': i.code,
+            'كود وزارة': i.ministryCode,
+            'اسم الصنف': i.name,
+            'الوحدة': i.unit,
+            'التصنيف': i.category,
+            'النوع': i.type,
+            'رصيد أول المدة': i.openingBalance || 0,
+            'الوارد': i.totalIn || 0,
+            'الصادر': i.totalOut || 0,
+            'الرصيد المتبقي': (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0),
+            'السعر': i.price || 0,
+            'ملاحظات': i.notes || ''
+        }));
+        name = 'المخزون';
+    } else if (section === 'incoming') {
+        data = incoming.map(r => ({
+            'اليوم': r.day, 'التاريخ': r.date, 'كود الصنف': r.code,
+            'كود وزارة': r.ministryCode, 'اسم الصنف': r.name, 'الوحدة': r.unit,
+            'التصنيف': r.category, 'النوع': r.type, 'الكمية': r.qty,
+            'الجهة الوارد منها': r.source, 'السعر': r.price, 'الإجمالي': r.total,
+            'ملاحظات': r.notes || ''
+        }));
+        name = 'الوارد';
+    } else if (section === 'outgoing') {
+        data = outgoing.map(r => ({
+            'اليوم': r.day, 'التاريخ': r.date, 'كود الصنف': r.code,
+            'كود وزارة': r.ministryCode, 'اسم الصنف': r.name, 'الوحدة': r.unit,
+            'التصنيف': r.category, 'النوع': r.type, 'الكمية': r.qty,
+            'الجهة المصروف لها': r.destination, 'السعر': r.price, 'الإجمالي': r.total,
+            'ملاحظات': r.notes || ''
+        }));
+        name = 'الصادر';
+    } else if (section === 'loan') {
+        data = loanItems.map(i => ({
+            'كود الصنف': i.code, 'كود وزارة': i.ministryCode, 'اسم الصنف': i.name,
+            'الوحدة': i.unit, 'التصنيف': i.category,
+            'رصيد أول المدة': i.openingBalance || 0,
+            'الوارد': i.totalIn || 0, 'الصادر': i.totalOut || 0,
+            'الرصيد المتبقي': (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0)
+        }));
+        name = 'الإعارة';
+    } else if (section === 'kahana') {
+        data = kahana.map(i => ({ 'الاسم': i.name, 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '' }));
+        name = 'الكهنة';
+    } else if (section === 'loanIncoming') {
+        data = loanIncoming.map(r => ({
+            'اليوم': r.day, 'التاريخ': r.date, 'كود': r.code,
+            'الاسم': r.name, 'الكمية': r.qty, 'الجهة': r.source,
+            'السعر': r.price, 'الإجمالي': r.total
+        }));
+        name = 'وارد الإعارة';
+    }
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, name);
+    XLSX.writeFile(wb, `مستشفى_الأقصى_${name}_${dateStr().replace(/\//g,'-')}.xlsx`);
+}
+
+// =============================================
+// المخزون CRUD
+// =============================================
+function calcItemRemaining() {
+    const opening = Number(document.getElementById('item_opening').value) || 0;
+    const tin = Number(document.getElementById('item_totalIn').value) || 0;
+    const tout = Number(document.getElementById('item_totalOut').value) || 0;
+    document.getElementById('item_remaining').value = opening + tin - tout;
+}
+
+function getNextItemCode() {
+    let max = 0;
+    inventory.forEach(i => {
+        const n = parseInt(i.code, 10);
+        if (!isNaN(n) && n > max) max = n;
+    });
+    return String(max + 1);
+}
+
+function showAddItemModal() {
+    const nextCode = getNextItemCode();
+    openModal('إضافة صنف جديد', `
+        <div class="form-grid">
+            <div class="form-group">
+                <label>كود الصنف</label>
+                <input type="text" id="item_code" value="${nextCode}" readonly>
+            </div>
+            <div class="form-group">
+                <label>كود وزارة</label>
+                <input type="text" id="item_ministry_code" placeholder="كود وزارة الصحة">
+            </div>
+            <div class="form-group full">
+                <label>اسم الصنف</label>
+                <input type="text" id="item_name" placeholder="اسم الصنف">
+            </div>
+            <div class="form-group">
+                <label>الوحدة</label>
+                <input type="text" id="item_unit" placeholder="مثال: عدد، كرتون">
+            </div>
+            <div class="form-group">
+                <label>التصنيف</label>
+                <select id="item_category">
+                    <option value="">اختر التصنيف</option>
+                    <option>أجهزة طبية</option><option>أجهزة كهربائية</option>
+                    <option>أقمشة وملبوسات</option><option>أثاث مكتبي</option>
+                    <option>مستلزمات طبية</option><option>أدوية</option>
+                    <option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select id="item_type">
+                    <option value="مستهلك">مستهلك</option>
+                    <option value="مستديم">مستديم</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رصيد أول المدة</label>
+                <input type="number" id="item_opening" value="0" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الوارد</label>
+                <input type="number" id="item_totalIn" value="0" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الصادر</label>
+                <input type="number" id="item_totalOut" value="0" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الرصيد المتبقي</label>
+                <input type="number" id="item_remaining" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>السعر</label>
+                <input type="number" id="item_price" value="0" min="0" step="0.01">
+            </div>
+            <div class="form-group full">
+                <label>ملاحظات</label>
+                <textarea id="item_notes"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="save-btn" onclick="saveInventoryItem()">حفظ</button>
+                <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
+            </div>
+        </div>
+    `);
+}
+
+function saveInventoryItem() {
+    const code = document.getElementById('item_code').value.trim();
+    if (!code) { alert('يرجى إدخال كود الصنف'); return; }
+    if (inventory.some(i => i.code === code)) { alert('كود الصنف موجود مسبقاً'); return; }
+    inventory.push({
+        code,
+        ministryCode: document.getElementById('item_ministry_code').value.trim(),
+        name: document.getElementById('item_name').value.trim(),
+        unit: document.getElementById('item_unit').value.trim(),
+        category: document.getElementById('item_category').value,
+        type: document.getElementById('item_type').value,
+        openingBalance: Number(document.getElementById('item_opening').value) || 0,
+        price: Number(document.getElementById('item_price').value) || 0,
+        notes: document.getElementById('item_notes').value.trim(),
+        totalIn: Number(document.getElementById('item_totalIn').value) || 0,
+        totalOut: Number(document.getElementById('item_totalOut').value) || 0,
+        remaining: Number(document.getElementById('item_remaining').value) || 0
+    });
+    save();
+    renderAll();
+    closeModal();
+}
+
+function editInventory(index) {
+    const item = inventory[index];
+    if (!item) return;
+    openModal('تعديل الصنف', `
+        <div class="form-grid">
+            <div class="form-group">
+                <label>كود الصنف</label>
+                <input type="text" id="item_code" value="${esc(item.code)}" readonly>
+            </div>
+            <div class="form-group">
+                <label>كود وزارة</label>
+                <input type="text" id="item_ministry_code" value="${esc(item.ministryCode)}">
+            </div>
+            <div class="form-group full">
+                <label>اسم الصنف</label>
+                <input type="text" id="item_name" value="${esc(item.name)}">
+            </div>
+            <div class="form-group">
+                <label>الوحدة</label>
+                <input type="text" id="item_unit" value="${esc(item.unit)}">
+            </div>
+            <div class="form-group">
+                <label>التصنيف</label>
+                <select id="item_category">${(['أجهزة طبية','أجهزة كهربائية','أقمشة وملبوسات','أثاث مكتبي','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
+                    `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
+                ).join('')}</select>
+            </div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select id="item_type">
+                    <option ${item.type === 'مستهلك' ? 'selected' : ''} value="مستهلك">مستهلك</option>
+                    <option ${item.type === 'مستديم' ? 'selected' : ''} value="مستديم">مستديم</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رصيد أول المدة</label>
+                <input type="number" id="item_opening" value="${item.openingBalance}" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الوارد</label>
+                <input type="number" id="item_totalIn" value="${item.totalIn || 0}" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الصادر</label>
+                <input type="number" id="item_totalOut" value="${item.totalOut || 0}" min="0" oninput="calcItemRemaining()">
+            </div>
+            <div class="form-group">
+                <label>الرصيد المتبقي</label>
+                <input type="number" id="item_remaining" value="${(item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0)}" min="0">
+            </div>
+            <div class="form-group">
+                <label>السعر</label>
+                <input type="number" id="item_price" value="${item.price}" min="0" step="0.01">
+            </div>
+            <div class="form-group full">
+                <label>ملاحظات</label>
+                <textarea id="item_notes">${esc(item.notes || '')}</textarea>
+            </div>
+            <div class="form-actions">
+                <button class="save-btn" onclick="updateInventory(${index})">تحديث</button>
+                <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
+            </div>
+        </div>
+    `);
+}
+
+function updateInventory(index) {
+    const item = inventory[index];
+    if (!item) return;
+    item.ministryCode = document.getElementById('item_ministry_code').value.trim();
+    item.name = document.getElementById('item_name').value.trim();
+    item.unit = document.getElementById('item_unit').value.trim();
+    item.category = document.getElementById('item_category').value;
+    item.type = document.getElementById('item_type').value;
+    item.openingBalance = Number(document.getElementById('item_opening').value) || 0;
+    item.totalIn = Number(document.getElementById('item_totalIn').value) || 0;
+    item.totalOut = Number(document.getElementById('item_totalOut').value) || 0;
+    item.remaining = Number(document.getElementById('item_remaining').value) || 0;
+    item.price = Number(document.getElementById('item_price').value) || 0;
+    item.notes = document.getElementById('item_notes').value.trim();
+    save();
+    renderAll();
+    closeModal();
+}
+
+function deleteInventory(index) {
+    if (!confirm('هل أنت متأكد من حذف هذا الصنف؟')) return;
+    const item = inventory[index];
+    if (!item) return;
+    inventory.splice(index, 1);
+    save();
+    renderAll();
+}
+
 // ---- Auto-fill ----
 function selectIncomingItem() {
     const code = document.getElementById('incoming_code').value;
