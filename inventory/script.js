@@ -642,6 +642,132 @@ function exportExcel(section) {
     XLSX.writeFile(wb, `مستشفى_الأقصى_${name}_${dateStr().replace(/\//g,'-')}.xlsx`);
 }
 
+// ---- Import Excel ----
+function importExcel(event, section) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            if (!rows || rows.length === 0) { alert('الملف فارغ'); return; }
+
+            let added = 0;
+            rows.forEach(row => {
+                if (section === 'inventory') {
+                    const code = String(row['كود الصنف'] || row['code'] || '').trim();
+                    const name = String(row['اسم الصنف'] || row['name'] || '').trim();
+                    if (!code || !name) return;
+                    if (inventory.some(i => i.code === code)) return;
+                    inventory.push({
+                        code,
+                        ministryCode: String(row['كود وزارة'] || row['ministryCode'] || ''),
+                        name,
+                        unit: String(row['الوحدة'] || row['unit'] || ''),
+                        category: String(row['التصنيف'] || row['category'] || ''),
+                        type: String(row['النوع'] || row['type'] || 'مستهلك'),
+                        openingBalance: Number(row['رصيد أول المدة'] || row['openingBalance'] || 0),
+                        price: Number(row['السعر'] || row['price'] || 0),
+                        notes: String(row['ملاحظات'] || row['notes'] || ''),
+                        totalIn: Number(row['الوارد'] || row['totalIn'] || 0),
+                        totalOut: Number(row['الصادر'] || row['totalOut'] || 0),
+                        remaining: Number(row['الرصيد المتبقي'] || row['remaining'] || 0)
+                    });
+                    added++;
+                } else if (section === 'incoming') {
+                    const code = String(row['كود الصنف'] || row['code'] || '').trim();
+                    const name = String(row['اسم الصنف'] || row['name'] || '').trim();
+                    if (!code || !name) return;
+                    incoming.push({
+                        id: generateId(),
+                        day: String(row['اليوم'] || row['day'] || today()),
+                        date: String(row['التاريخ'] || row['date'] || dateStr()),
+                        code, ministryCode: String(row['كود وزارة'] || row['ministryCode'] || ''),
+                        name, unit: String(row['الوحدة'] || row['unit'] || ''),
+                        category: String(row['التصنيف'] || row['category'] || ''),
+                        type: String(row['النوع'] || row['type'] || 'مستهلك'),
+                        qty: Number(row['الكمية'] || row['qty'] || 0),
+                        source: String(row['الجهة الوارد منها'] || row['source'] || ''),
+                        price: Number(row['السعر'] || row['price'] || 0),
+                        total: Number(row['الإجمالي'] || row['total'] || 0),
+                        notes: String(row['ملاحظات'] || row['notes'] || '')
+                    });
+                    recalcInventoryTotals(code);
+                    added++;
+                } else if (section === 'outgoing') {
+                    const code = String(row['كود الصنف'] || row['code'] || '').trim();
+                    const name = String(row['اسم الصنف'] || row['name'] || '').trim();
+                    if (!code || !name) return;
+                    outgoing.push({
+                        id: generateId(),
+                        day: String(row['اليوم'] || row['day'] || today()),
+                        date: String(row['التاريخ'] || row['date'] || dateStr()),
+                        code, ministryCode: String(row['كود وزارة'] || row['ministryCode'] || ''),
+                        name, unit: String(row['الوحدة'] || row['unit'] || ''),
+                        category: String(row['التصنيف'] || row['category'] || ''),
+                        type: String(row['النوع'] || row['type'] || 'مستهلك'),
+                        qty: Number(row['الكمية'] || row['qty'] || 0),
+                        destination: String(row['الجهة المصروف لها'] || row['destination'] || ''),
+                        price: Number(row['السعر'] || row['price'] || 0),
+                        total: Number(row['الإجمالي'] || row['total'] || 0),
+                        notes: String(row['ملاحظات'] || row['notes'] || '')
+                    });
+                    recalcInventoryTotals(code);
+                    added++;
+                } else if (section === 'loan') {
+                    const code = String(row['كود الصنف'] || row['code'] || '').trim();
+                    const name = String(row['اسم الصنف'] || row['name'] || '').trim();
+                    if (!code || !name) return;
+                    if (loanItems.some(i => i.code === code)) return;
+                    loanItems.push({
+                        code, ministryCode: String(row['كود وزارة'] || row['ministryCode'] || ''),
+                        name, unit: String(row['الوحدة'] || row['unit'] || ''),
+                        category: String(row['التصنيف'] || row['category'] || ''),
+                        openingBalance: Number(row['رصيد أول المدة'] || row['openingBalance'] || 0)
+                    });
+                    added++;
+                } else if (section === 'loanIncoming') {
+                    const code = String(row['كود الصنف'] || row['كود'] || row['code'] || '').trim();
+                    const name = String(row['اسم الصنف'] || row['الاسم'] || row['name'] || '').trim();
+                    if (!code || !name) return;
+                    loanIncoming.push({
+                        id: generateId(),
+                        day: String(row['اليوم'] || row['day'] || today()),
+                        date: String(row['التاريخ'] || row['date'] || dateStr()),
+                        code, name,
+                        qty: Number(row['الكمية'] || row['qty'] || 0),
+                        source: String(row['الجهة'] || row['source'] || ''),
+                        price: Number(row['السعر'] || row['price'] || 0),
+                        total: Number(row['الإجمالي'] || row['total'] || 0)
+                    });
+                    recalcLoanTotals(code);
+                    added++;
+                } else if (section === 'kahana') {
+                    const name = String(row['الاسم'] || row['name'] || '').trim();
+                    if (!name) return;
+                    kahana.push({
+                        name,
+                        details: String(row['التفاصيل'] || row['details'] || ''),
+                        notes: String(row['ملاحظات'] || row['notes'] || '')
+                    });
+                    added++;
+                }
+            });
+            save();
+            renderAll();
+            event.target.value = '';
+            alert(`تم استيراد ${added} سجل بنجاح`);
+        } catch (err) {
+            alert('فشل قراءة الملف: ' + err.message);
+            event.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
 // =============================================
 // المخزون CRUD
 // =============================================
@@ -1062,8 +1188,8 @@ function showAddOutgoingModal() {
     const emptyMsg = inventory.length === 0 ? '<option value="" disabled>لا توجد أصناف - أضف أصنافاً أولاً</option>' : '<option value="">اختر صنفاً</option>';
     openModal('إضافة صادر جديد', `
         <div class="form-grid">
-            <div class="form-group"><label>اليوم</label><input type="text" id="outgoing_day" value="${today()}"></div>
-            <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" value="${dateStr()}"></div>
+            <div class="form-group"><label>اليوم</label><select id="outgoing_day"><option value="">اختر اليوم</option><option>الأحد</option><option>الإثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option><option>السبت</option></select></div>
+            <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" placeholder="اكتب التاريخ"></div>
             <div class="form-group"><label>كود الصنف</label><select id="outgoing_code" onchange="selectOutgoingItem()">${emptyMsg}${opts}</select></div>
             <div class="form-group full balance-hint" id="outgoing_balance"></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="outgoing_ministry_code"></div>
@@ -1129,7 +1255,9 @@ function editOutgoing(index) {
     ).join('');
     openModal('تعديل صادر', `
         <div class="form-grid">
-            <div class="form-group"><label>اليوم</label><input type="text" id="outgoing_day" value="${esc(rec.day)}"></div>
+            <div class="form-group"><label>اليوم</label><select id="outgoing_day">${(['','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']).map(d =>
+                `<option ${d === rec.day ? 'selected' : ''}>${esc(d)}</option>`
+            ).join('')}</select></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" value="${esc(rec.date)}"></div>
             <div class="form-group"><label>كود الصنف</label><select id="outgoing_code" onchange="selectOutgoingItem()">${opts}</select></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="outgoing_ministry_code" value="${esc(rec.ministryCode)}"></div>
