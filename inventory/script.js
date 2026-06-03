@@ -913,13 +913,7 @@ function showAddIncomingModal() {
             </div>
             <div class="form-group">
                 <label>الجهة الوارد منها</label>
-                <select id="incoming_source">
-                    <option value="">اختر الجهة</option>
-                    <option>مخازن وزارة الصحة</option><option>خزانة الأمريكي</option>
-                    <option>تبرعات</option><option>منظمة الصحة العالمية</option>
-                    <option>أونروا</option><option>الهلال الأحمر</option>
-                    <option>شراء مباشر</option><option>أخرى</option>
-                </select>
+                <input type="text" id="incoming_source" placeholder="الجهة الوارد منها">
             </div>
             <div class="form-group">
                 <label>السعر</label>
@@ -990,9 +984,7 @@ function editIncoming(index) {
             <div class="form-group"><label>التصنيف</label><input type="text" id="incoming_category" value="${esc(rec.category)}"></div>
             <div class="form-group"><label>النوع</label><input type="text" id="incoming_type" value="${esc(rec.type)}"></div>
             <div class="form-group"><label>الكمية</label><input type="number" id="incoming_qty" value="${rec.qty}" min="0" oninput="calcIncomingTotal()"></div>
-            <div class="form-group"><label>الجهة</label><select id="incoming_source">${(['','مخازن وزارة الصحة','خزانة الأمريكي','تبرعات','منظمة الصحة العالمية','أونروا','الهلال الأحمر','شراء مباشر','أخرى']).map(c =>
-                `<option ${c === rec.source ? 'selected' : ''}>${esc(c)}</option>`
-            ).join('')}</select></div>
+            <div class="form-group"><label>الجهة</label><input type="text" id="incoming_source" value="${esc(rec.source)}"></div>
             <div class="form-group"><label>السعر</label><input type="number" id="incoming_price" value="${rec.price}" min="0" step="0.01" oninput="calcIncomingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="incoming_total" value="${rec.total}" readonly></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="incoming_notes">${esc(rec.notes || '')}</textarea></div>
