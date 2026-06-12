@@ -3,252 +3,416 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#142918">
     <title>إدارة المخزون - مستشفى شهداء الأقصى</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="../shared.css">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script>
+function sidebarTab(n) {
+    if (n === 'incoming' || n === 'outgoing') { n = 'inventory'; }
+    switchTab(n);
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    const link = document.querySelector(`.sidebar-nav a[data-tab="${n}"]`);
+    if (link) link.classList.add('active');
+}
+function subTab(parent, name) {
+    document.querySelectorAll(`#${parent} .sub-tab`).forEach(t => t.classList.remove('active'));
+    document.querySelectorAll(`#${parent} .sub-content`).forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`#${parent} .sub-tab[data-sub="${name}"]`);
+    const content = document.getElementById(`${parent}-${name}`);
+    if (tab) tab.classList.add('active');
+    if (content) content.classList.add('active');
+}
+// Auto-open correct sub-tab from hash
+if (window.location.hash) {
+    const h = window.location.hash.replace('#tab-', '');
+    if (h === 'incoming' || h === 'outgoing') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => subTab('tab-inventory', h), 100);
+        });
+    }
+}
+    </script>
 </head>
 <body>
     <div class="theme-overlay" id="themeOverlay"></div>
-    <div class="bg-overlay" id="bgOverlay"></div>
-    <div class="container">
-        <header>
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                    <h1>نظام إدارة المخزون</h1>
-                    <p>مستشفى شهداء الأقصى - دير البلح</p>
-                    <div id="liveClock" class="live-clock"></div>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center">
-                    <div class="bg-dropdown">
-                        <button class="theme-btn" onclick="toggleBgDropdown()" id="bgBtn" title="تغيير الخلفية"><i class="fas fa-image"></i></button>
-                        <div class="bg-dropdown-menu" id="bgMenu">
-                            <div class="bg-grid">
-                                <button onclick="setBg('default')" data-bg="default"><span class="bg-dot" style="border:2px dashed #bbb"></span> بدون</button>
-                                <button onclick="setBg('earth')" data-bg="earth"><span class="bg-dot" style="background:#2d7d46"></span> الأرض</button>
-                                <button onclick="setBg('mars')" data-bg="mars"><span class="bg-dot" style="background:#c0392b"></span> المريخ</button>
-                                <button onclick="setBg('jupiter')" data-bg="jupiter"><span class="bg-dot" style="background:#d4a76a"></span> المشتري</button>
-                                <button onclick="setBg('moon')" data-bg="moon"><span class="bg-dot" style="background:#95a5a6"></span> القمر</button>
-                                <button onclick="setBg('mercury')" data-bg="mercury"><span class="bg-dot" style="background:#7f8c8d"></span> عطارد</button>
-                                <button onclick="setBg('venus')" data-bg="venus"><span class="bg-dot" style="background:#e67e22"></span> الزهرة</button>
-                                <button onclick="setBg('saturn')" data-bg="saturn"><span class="bg-dot" style="background:#d4a76a"></span> زحل</button>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn"><i class="fas fa-moon"></i></button>
-                    <button class="theme-btn" onclick="logout()" style="background:rgba(255,255,255,0.2);font-size:13px;width:auto;padding:0 15px;border-radius:10px"><i class="fas fa-right-from-bracket"></i> تسجيل الخروج</button>
-                </div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="fas fa-warehouse"></i></div>
+            <div class="brand-text">
+                <strong>المستودع</strong>
+                <small>مستشفى شهداء الأقصى</small>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="active tab" data-tab="inventory" onclick="sidebarTab('inventory')">
+                <i class="fas fa-cubes"></i> المخزون
+            </a>
+            <a class="tab" data-tab="loan" onclick="sidebarTab('loan')">
+                <i class="fas fa-hand-holding-box"></i> الإعارة
+            </a>
+            <a class="tab" data-tab="kahana" onclick="sidebarTab('kahana')">
+                <i class="fas fa-people-group"></i> الكهنة
+            </a>
+            <a class="tab" data-tab="categories" onclick="sidebarTab('categories')">
+                <i class="fas fa-tags"></i> التصنيفات
+            </a>
+            <a class="tab" data-tab="reports" onclick="sidebarTab('reports')">
+                <i class="fas fa-chart-bar"></i> التقارير
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a onclick="navigateWithProgress('../admin/index.html')"><i class="fas fa-crown"></i> لوحة التحكم</a>
+            <a onclick="logout()"><i class="fas fa-right-from-bracket"></i> تسجيل الخروج</a>
+        </div>
+    </aside>
+
+    <!-- ===== Main Content ===== -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <div class="topbar-title">
+                <i class="fas fa-boxes-stacked"></i>
+                إدارة المخزون والمستلزمات
+            </div>
+            <div class="topbar-left">
+                <div id="liveClock" class="topbar-clock"></div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="الوضع الليلي">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <defs>
+                            <mask id="ttMaskInv">
+                                <rect width="24" height="24" fill="white"/>
+                                <circle class="tt-mask-c" cx="12" cy="12" r="9" fill="black"/>
+                            </mask>
+                        </defs>
+                        <g class="tt-rays">
+                            <line x1="12" y1="1" x2="12" y2="4"/>
+                            <line x1="12" y1="20" x2="12" y2="23"/>
+                            <line x1="1" y1="12" x2="4" y2="12"/>
+                            <line x1="20" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+                            <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+                            <line x1="6.34" y1="17.66" x2="4.22" y2="19.78"/>
+                            <line x1="19.78" y1="19.78" x2="17.66" y2="17.66"/>
+                        </g>
+                        <circle class="tt-body" cx="12" cy="12" r="9" fill="currentColor" stroke="none" mask="url(#ttMaskInv)"/>
+                    </svg>
+                </button>
+                <span class="topbar-badge" id="totalBadge"><i class="fas fa-cube"></i> 0 مخزون</span>
             </div>
         </header>
 
-        <nav class="tabs">
-            <button class="tab active" data-tab="inventory" onclick="switchTab('inventory')">المخزون</button>
-            <button class="tab" data-tab="incoming" onclick="switchTab('incoming')">الوارد / الإضافة</button>
-            <button class="tab" data-tab="outgoing" onclick="switchTab('outgoing')">الصادر / المنصرف</button>
-            <button class="tab" data-tab="loan" onclick="switchTab('loan')">الإعارة</button>
-            <button class="tab" data-tab="kahana" onclick="switchTab('kahana')">الكهنة</button>
-        </nav>
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Stats Row -->
+            <div class="stats-row" id="statsRow">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-cube" style="color:#1a7a4c"></i></div>
+                    <div class="stat-value" id="statItems">0</div>
+                    <div class="stat-label">إجمالي الأصناف</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-arrow-down" style="color:#3b82f6"></i></div>
+                    <div class="stat-value" id="statIncoming">0</div>
+                    <div class="stat-label">سجلات الوارد</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-arrow-up" style="color:#f59e0b"></i></div>
+                    <div class="stat-value" id="statOutgoing">0</div>
+                    <div class="stat-label">سجلات الصادر</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-hand-holding-box" style="color:#8b5cf6"></i></div>
+                    <div class="stat-value" id="statLoan">0</div>
+                    <div class="stat-label">الإعارة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-exclamation-triangle" style="color:#ef4444"></i></div>
+                    <div class="stat-value" id="statLowStock">0</div>
+                    <div class="stat-label">رصيد منخفض</div>
+                </div>
+            </div>
 
-        <!-- المخزون -->
-        <section id="tab-inventory" class="tab-content active">
-            <div class="toolbar">
-                <h2>جدول الأرصدة والبيانات الأساسية</h2>
-                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button onclick="showAddItemModal()"><i class="fas fa-plus"></i> إضافة صنف جديد</button>
-                    <button onclick="exportExcel('inventory')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'inventory')">
+            <!-- == المخزون == -->
+            <section id="tab-inventory" class="tab-content active">
+                <!-- Sub-tabs -->
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-sub="list" onclick="subTab('tab-inventory','list')">
+                        <i class="fas fa-cubes"></i> المخزون
+                    </button>
+                    <button class="sub-tab" data-sub="incoming" onclick="subTab('tab-inventory','incoming')">
+                        <i class="fas fa-arrow-down"></i> وارد / إضافة
+                    </button>
+                    <button class="sub-tab" data-sub="outgoing" onclick="subTab('tab-inventory','outgoing')">
+                        <i class="fas fa-arrow-up"></i> صادر / منصرف
+                    </button>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>كود الصنف</th>
-                            <th>كود وزارة</th>
-                            <th>اسم الصنف</th>
-                            <th>الوحدة</th>
-                            <th>التصنيف</th>
-                            <th>النوع</th>
-                            <th>رصيد أول المدة</th>
-                            <th>الوارد</th>
-                            <th>الصادر</th>
-                            <th>الرصيد المتبقي</th>
-                            <th>السعر</th>
-                            <th>ملاحظات</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryTableBody"></tbody>
-                </table>
-            </div>
-        </section>
 
-        <!-- الوارد / الإضافة -->
-        <section id="tab-incoming" class="tab-content">
-            <div class="toolbar">
-                <h2>تسجيل البضائع المستلمة</h2>
-                <div style="display:flex;gap:8px">
-                    <button onclick="showAddIncomingModal()"><i class="fas fa-plus"></i> إضافة وارد جديد</button>
-                    <button onclick="exportExcel('incoming')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput_incoming').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput_incoming" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'incoming')">
+                <!-- Sub: المخزون -->
+                <div id="tab-inventory-list" class="sub-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-cubes"></i> جدول الأرصدة</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddItemModal()"><i class="fas fa-plus"></i> إضافة صنف</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('inventory')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'inventory')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>الكود</th><th>كود وزارة</th><th>اسم الصنف</th><th>الوحدة</th>
+                                            <th>التصنيف</th><th>النوع</th><th>رصيد أول</th><th>وارد</th>
+                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventoryTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اليوم</th>
-                            <th>التاريخ</th>
-                            <th>كود الصنف</th>
-                            <th>كود وزارة</th>
-                            <th>اسم الصنف</th>
-                            <th>الوحدة</th>
-                            <th>التصنيف</th>
-                            <th>النوع</th>
-                            <th>الكمية</th>
-                            <th>الجهة الوارد منها</th>
-                            <th>السعر</th>
-                            <th>الإجمالي</th>
-                            <th>ملاحظات</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="incomingTableBody"></tbody>
-                </table>
-            </div>
-        </section>
 
-        <!-- الصادر / المنصرف -->
-        <section id="tab-outgoing" class="tab-content">
-            <div class="toolbar">
-                <h2>تسجيل البضائع المصروفة للأقسام</h2>
-                <div style="display:flex;gap:8px">
-                    <button onclick="showAddOutgoingModal()"><i class="fas fa-plus"></i> إضافة صادر جديد</button>
-                    <button onclick="exportExcel('outgoing')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput_outgoing').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput_outgoing" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'outgoing')">
+                <!-- Sub: وارد / إضافة -->
+                <div id="tab-inventory-incoming" class="sub-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-arrow-down" style="color:#3b82f6"></i> تسجيل البضائع المستلمة</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddIncomingModal()"><i class="fas fa-plus"></i> وارد جديد</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('incoming')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput_incoming').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput_incoming" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'incoming')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
+                                            <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="incomingTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اليوم</th>
-                            <th>التاريخ</th>
-                            <th>كود الصنف</th>
-                            <th>كود وزارة</th>
-                            <th>اسم الصنف</th>
-                            <th>الوحدة</th>
-                            <th>التصنيف</th>
-                            <th>النوع</th>
-                            <th>الكمية</th>
-                            <th>الجهة المصروف لها</th>
-                            <th>السعر</th>
-                            <th>الإجمالي</th>
-                            <th>ملاحظات</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="outgoingTableBody"></tbody>
-                </table>
-            </div>
-        </section>
 
-        <!-- الإعارة -->
-        <section id="tab-loan" class="tab-content">
-            <div class="toolbar">
-                <h2>المعدات الطبية المعارة</h2>
-                <div style="display:flex;gap:8px">
-                    <button onclick="showAddLoanModal()"><i class="fas fa-plus"></i> إضافة إعارة جديدة</button>
-                    <button onclick="exportExcel('loan')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput_loan').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput_loan" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'loan')">
+                <!-- Sub: صادر / منصرف -->
+                <div id="tab-inventory-outgoing" class="sub-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> تسجيل البضائع المصروفة</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddOutgoingModal()"><i class="fas fa-plus"></i> صادر جديد</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('outgoing')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput_outgoing').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput_outgoing" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'outgoing')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
+                                            <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="outgoingTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>كود الصنف</th>
-                            <th>كود وزارة</th>
-                            <th>اسم الصنف</th>
-                            <th>الوحدة</th>
-                            <th>التصنيف</th>
-                            <th>رصيد أول المدة</th>
-                            <th>الوارد</th>
-                            <th>الصادر</th>
-                            <th>الرصيد المتبقي</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="loanTableBody"></tbody>
-                </table>
-            </div>
-            <div class="toolbar" style="margin-top:20px">
-                <h3>سجل الإعارة الوارد</h3>
-                <div style="display:flex;gap:8px">
-                    <button onclick="showAddLoanIncomingModal()"><i class="fas fa-plus"></i> إضافة وارد إعارة</button>
-                    <button onclick="exportExcel('loanIncoming')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput_loanIncoming').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput_loanIncoming" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'loanIncoming')">
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اليوم</th>
-                            <th>التاريخ</th>
-                            <th>كود الصنف</th>
-                            <th>اسم الصنف</th>
-                            <th>الكمية</th>
-                            <th>الجهة الوارد منها</th>
-                            <th>السعر</th>
-                            <th>الإجمالي</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="loanIncomingBody"></tbody>
-                </table>
-            </div>
-        </section>
+            </section>
 
-        <!-- الكهنة -->
-        <section id="tab-kahana" class="tab-content">
-            <div class="toolbar">
-                <h2>الكهنة</h2>
-                <div style="display:flex;gap:8px">
-                    <button onclick="showAddKahanaModal()"><i class="fas fa-plus"></i> إضافة</button>
-                    <button onclick="exportExcel('kahana')" style="background:#23995e"><i class="fas fa-file-export"></i> تصدير Excel</button>
-                    <button onclick="document.getElementById('excelFileInput_kahana').click()" style="background:#6c5ce7"><i class="fas fa-file-import"></i> رفع Excel</button>
-                    <input type="file" id="excelFileInput_kahana" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'kahana')">
+            <!-- == الوارد (مدمج في المخزون - احتفاظ للتوافق) == -->
+            <section id="tab-incoming" class="tab-content" style="display:none"></section>
+
+            <!-- == الصادر (مدمج في المخزون - احتفاظ للتوافق) == -->
+            <section id="tab-outgoing" class="tab-content" style="display:none"></section>
+
+            <!-- == الإعارة == -->
+            <section id="tab-loan" class="tab-content">
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-sub="list" onclick="subTab('tab-loan','list')">
+                        <i class="fas fa-hand-holding-box"></i> الإعارة
+                    </button>
+                    <button class="sub-tab" data-sub="incoming" onclick="subTab('tab-loan','incoming')">
+                        <i class="fas fa-arrow-down"></i> وارد / إضافة
+                    </button>
+                    <button class="sub-tab" data-sub="outgoing" onclick="subTab('tab-loan','outgoing')">
+                        <i class="fas fa-arrow-up"></i> صادر / منصرف
+                    </button>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الاسم</th>
-                            <th>التفاصيل</th>
-                            <th>ملاحظات</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="kahanaTableBody"></tbody>
-                </table>
-            </div>
-        </section>
+
+                <div id="tab-loan-list" class="sub-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-hand-holding-box" style="color:#8b5cf6"></i> المعدات الطبية المعارة</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddLoanModal()"><i class="fas fa-plus"></i> إعارة جديدة</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('loan')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput_loan').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput_loan" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'loan')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>كود</th><th>كود وزارة</th><th>الاسم</th><th>الوحدة</th>
+                                            <th>التصنيف</th><th>رصيد أول</th><th>وارد</th><th>صادر</th><th>المتبقي</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="loanTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-loan-incoming" class="sub-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-circle-arrow-down" style="color:#8b5cf6"></i> سجل الإعارة الوارد</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddLoanIncomingModal()"><i class="fas fa-plus"></i> وارد إعارة</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('loanIncoming')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput_loanIncoming').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput_loanIncoming" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'loanIncoming')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>اليوم</th><th>التاريخ</th><th>كود</th><th>الاسم</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="loanIncomingBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-loan-outgoing" class="sub-content">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> صادر الإعارة</h2></div>
+                        <div class="card-body"><p style="text-align:center;padding:2rem;color:var(--text-sec)">قريباً...</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- == الكهنة == -->
+            <section id="tab-kahana" class="tab-content">
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-sub="list" onclick="subTab('tab-kahana','list')">
+                        <i class="fas fa-people-group"></i> الكهنة
+                    </button>
+                    <button class="sub-tab" data-sub="incoming" onclick="subTab('tab-kahana','incoming')">
+                        <i class="fas fa-arrow-down"></i> وارد / إضافة
+                    </button>
+                    <button class="sub-tab" data-sub="outgoing" onclick="subTab('tab-kahana','outgoing')">
+                        <i class="fas fa-arrow-up"></i> صادر / منصرف
+                    </button>
+                </div>
+
+                <div id="tab-kahana-list" class="sub-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-people-group" style="color:#ec4899"></i> الكهنة</h2>
+                            <div class="toolbar-actions">
+                                <button class="btn-action" onclick="showAddKahanaModal()"><i class="fas fa-plus"></i> إضافة</button>
+                                <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
+                                <button class="btn-action btn-green" onclick="exportExcel('kahana')"><i class="fas fa-file-export"></i> تصدير</button>
+                                <button class="btn-action btn-indigo" onclick="document.getElementById('excelFileInput_kahana').click()"><i class="fas fa-file-import"></i> استيراد</button>
+                                <input type="file" id="excelFileInput_kahana" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event,'kahana')">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:0">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>الاسم</th><th>التصنيف</th><th>التفاصيل</th><th>ملاحظات</th><th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="kahanaTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-kahana-incoming" class="sub-content">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="fas fa-arrow-down" style="color:#3b82f6"></i> وارد الكهنة</h2></div>
+                        <div class="card-body"><p style="text-align:center;padding:2rem;color:var(--text-sec)">قريباً...</p></div>
+                    </div>
+                </div>
+
+                <div id="tab-kahana-outgoing" class="sub-content">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> صادر الكهنة</h2></div>
+                        <div class="card-body"><p style="text-align:center;padding:2rem;color:var(--text-sec)">قريباً...</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- == التصنيفات (قيد التطوير) == -->
+            <section id="tab-categories" class="tab-content">
+                <div class="card">
+                    <div class="card-body" style="text-align:center;padding:60px 24px">
+                        <i class="fas fa-tags" style="font-size:48px;color:var(--text-muted);display:block;margin-bottom:16px;opacity:0.4"></i>
+                        <h3 style="color:var(--text-secondary)">إدارة التصنيفات</h3>
+                        <p style="color:var(--text-muted);margin-top:8px">قيد التطوير - سيتم إضافته قريباً</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- == التقارير (قيد التطوير) == -->
+            <section id="tab-reports" class="tab-content">
+                <div class="card">
+                    <div class="card-body" style="text-align:center;padding:60px 24px">
+                        <i class="fas fa-chart-bar" style="font-size:48px;color:var(--text-muted);display:block;margin-bottom:16px;opacity:0.4"></i>
+                        <h3 style="color:var(--text-secondary)">التقارير والإحصائيات</h3>
+                        <p style="color:var(--text-muted);margin-top:8px">قيد التطوير - سيتم إضافته قريباً</p>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
 
-    <!-- Modal -->
+    <!-- ===== Modal ===== -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
     <div class="modal" id="modal">
         <div class="modal-header">
@@ -258,6 +422,53 @@
         <div class="modal-body" id="modalBody"></div>
     </div>
 
-    <script src="script.js?v=2"></script>
+    <!-- ===== Toast Container ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="رجوع للأعلى">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- ===== Loading Overlay ===== -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="loading-icon"><i class="fas fa-cubes"></i></div>
+            <div class="loading-title">جاري التحميل...</div>
+            <div class="progress-8bit">
+                <div class="progress-8bit-track" id="loadingTrack"></div>
+            </div>
+            <div class="loading-percent" id="loadingPercent">0%</div>
+        </div>
+    </div>
+
+    <script>
+function navigateWithProgress(url) {
+    var overlay = document.getElementById('loadingOverlay');
+    var track = document.getElementById('loadingTrack');
+    var pct = document.getElementById('loadingPercent');
+    overlay.classList.add('active');
+    var blocks = [];
+    for (var i = 0; i < 20; i++) {
+        var b = document.createElement('div');
+        b.className = 'progress-8bit-block';
+        track.appendChild(b);
+        blocks.push(b);
+    }
+    var idx = 0;
+    var total = 20;
+    var interval = setInterval(function() {
+        if (idx < total) {
+            blocks[idx].classList.add('filled');
+            idx++;
+            pct.textContent = Math.round((idx / total) * 100) + '%';
+        }
+        if (idx >= total) {
+            clearInterval(interval);
+            setTimeout(function() { window.location.href = url; }, 200);
+        }
+    }, 75);
+}
+    </script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -20,6 +20,16 @@ function dateStr() {
     return new Date().toLocaleDateString('ar-EG');
 }
 
+function showToast(msg, type) {
+    const c = document.getElementById('toastContainer') || (() => {
+        const el = document.createElement('div'); el.id = 'toastContainer'; el.className = 'toast-container';
+        document.body.appendChild(el); return el;
+    })();
+    const t = document.createElement('div'); t.className = 'toast ' + (type || 'info'); t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 3200);
+}
+
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2,5);
 }
@@ -27,8 +37,8 @@ function generateId() {
 // ---- Color Customization System ----
 const COLORS = ['', '#ffcdd2','#f8bbd0','#e1bee7','#bbdefb','#b3e5fc','#b2dfdb','#c8e6c9','#fff9c4','#ffe0b2','#ffccbc','#d7ccc8','#f5f5f5'];
 
-const SECT_KEYS = { inventory:['code','ministryCode','name','unit','category','type','openingBalance','totalIn','totalOut','remaining','price','notes'], incoming:['day','date','code','ministryCode','name','unit','category','type','qty','source','price','total','notes'], outgoing:['day','date','code','ministryCode','name','unit','category','type','qty','destination','price','total','notes'], loan:['code','ministryCode','name','unit','category','openingBalance','totalIn','totalOut','remaining'], loanIncoming:['day','date','code','name','qty','source','price','total'], kahana:['name','details','notes'] };
-const SECT_DISPLAY = { inventory:['كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','رصيد أول','الوارد','الصادر','المتبقي','السعر','ملاحظات'], incoming:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], outgoing:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], loan:['كود','كود وزارة','الاسم','الوحدة','التصنيف','رصيد أول','الوارد','الصادر','المتبقي'], loanIncoming:['اليوم','التاريخ','كود','الاسم','الكمية','الجهة','السعر','الإجمالي'], kahana:['الاسم','التفاصيل','ملاحظات'] };
+const SECT_KEYS = { inventory:['code','ministryCode','name','unit','category','type','openingBalance','totalIn','totalOut','remaining','price','notes'], incoming:['day','date','code','ministryCode','name','unit','category','type','qty','source','price','total','notes'], outgoing:['day','date','code','ministryCode','name','unit','category','type','qty','destination','price','total','notes'], loan:['code','ministryCode','name','unit','category','openingBalance','totalIn','totalOut','remaining'], loanIncoming:['day','date','code','name','qty','source','price','total'], kahana:['name','category','details','notes'] };
+const SECT_DISPLAY = { inventory:['كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','رصيد أول','الوارد','الصادر','المتبقي','السعر','ملاحظات'], incoming:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], outgoing:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], loan:['كود','كود وزارة','الاسم','الوحدة','التصنيف','رصيد أول','الوارد','الصادر','المتبقي'], loanIncoming:['اليوم','التاريخ','كود','الاسم','الكمية','الجهة','السعر','الإجمالي'], kahana:['الاسم','التصنيف','التفاصيل','ملاحظات'] };
 
 let colColors = safeParse('_colColors', {});
 
@@ -109,135 +119,254 @@ function setCellColor(section, index, colKey, color) {
     save(); renderAll(); closeModal();
 }
 
+// ---- HeroUI Color Panel ----
 function showColorsPanel() {
-    const sect = document.getElementById('tab-inventory').classList.contains('active') ? 'inventory'
-        : document.getElementById('tab-incoming').classList.contains('active') ? 'incoming'
-        : document.getElementById('tab-outgoing').classList.contains('active') ? 'outgoing'
-        : document.getElementById('tab-loan').classList.contains('active') ? 'loan'
-        : document.getElementById('tab-kahana')?.classList.contains('active') ? 'kahana' : 'inventory';
-    const arr = SECT_MAP[sect] || [];
-    const cols = SECT_KEYS[sect] || [];
-    const dcols = SECT_DISPLAY[sect] || [];
-    const rowOpts = arr.map((r,i) => `<option value="${i}">${esc(r.code||r.name||'')} - ${esc(r.name||r.code||'')}</option>`).join('');
-    const colOpts = cols.map((k,i) => `<option value="${k}">${esc(dcols[i]||k)}</option>`).join('');
+    const sect = getActiveSection();
     openModal('<i class="fas fa-palette"></i> تخصيص الألوان', `
-        <div style="margin-bottom:20px">
-            <label style="font-weight:bold;display:block;margin-bottom:6px">القسم:</label>
-            <select id="cpSect" onchange="changeCpSection()" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;font-size:14px">
-                <option value="inventory" ${sect==='inventory'?'selected':''}>المخزون</option>
-                <option value="incoming" ${sect==='incoming'?'selected':''}>الوارد</option>
-                <option value="outgoing" ${sect==='outgoing'?'selected':''}>الصادر</option>
-                <option value="loan" ${sect==='loan'?'selected':''}>الإعارة</option>
-                <option value="loanIncoming" ${sect==='loanIncoming'?'selected':''}>وارد الإعارة</option>
-                <option value="kahana" ${sect==='kahana'?'selected':''}>الكهنة</option>
-            </select>
-        </div>
-        <div id="cpBody">
-            ${renderCpBody(sect)}
+        <div class="cp-hero">
+            <div class="cp-hero-selector" style="margin-bottom:14px">
+                <label>القسم:</label>
+                <select id="cpSect" onchange="changeHeroSect()">
+                    ${['inventory','incoming','outgoing','loan','loanIncoming','kahana'].map(v =>
+                        `<option value="${v}" ${sect===v?'selected':''}>${v==='inventory'?'المخزون':v==='incoming'?'الوارد':v==='outgoing'?'الصادر':v==='loan'?'الإعارة':v==='loanIncoming'?'وارد الإعارة':'الكهنة'}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            <div class="cp-hero-tabs">
+                <button class="cp-hero-tab active" data-htab="rows" onclick="switchHeroTab('rows')"><i class="fas fa-table-cells"></i> الصفوف</button>
+                <button class="cp-hero-tab" data-htab="cols" onclick="switchHeroTab('cols')"><i class="fas fa-columns"></i> الأعمدة</button>
+                <button class="cp-hero-tab" data-htab="cells" onclick="switchHeroTab('cells')"><i class="fas fa-border-all"></i> الخلايا</button>
+            </div>
+            <div id="heroCpBody">${renderHeroSection(sect)}</div>
         </div>
     `);
+    setTimeout(initAllHeroCp, 50);
 }
-
-function renderCpBody(sect) {
+function getActiveSection() {
+    return ['inventory','incoming','outgoing','loan','kahana'].find(v =>
+        document.getElementById('tab-' + v)?.classList.contains('active')
+    ) || 'inventory';
+}
+function switchHeroTab(tab) {
+    document.querySelectorAll('.cp-hero-tab').forEach(t => t.classList.toggle('active', t.dataset.htab === tab));
+    document.querySelectorAll('.cp-hero-section').forEach(s => s.classList.toggle('active', s.id === 'hero-'+tab));
+}
+function changeHeroSect() {
+    const s = document.getElementById('cpSect').value;
+    document.getElementById('heroCpBody').innerHTML = renderHeroSection(s);
+    setTimeout(initAllHeroCp, 50);
+}
+function initAllHeroCp() {
+    ['rows-bg','rows-tx','cols-tx','cells-tx'].forEach(id => {
+        if(document.getElementById('cpw-'+id+'-area')) initHeroCp(id);
+    });
+}
+function renderHeroSection(sect) {
     const arr = SECT_MAP[sect] || [];
     const cols = SECT_KEYS[sect] || [];
     const dcols = SECT_DISPLAY[sect] || [];
-    const rowOpts = arr.map((r,i) => `<option value="${i}">${esc(r.code||r.name||'')} - ${esc(r.name||r.code||'')}</option>`).join('');
-    const colOpts = cols.map((k,i) => `<option value="${k}">${esc(dcols[i]||k)}</option>`).join('');
+    const rowOpts = arr.map((r,i) =>
+        `<option value="${i}">${esc(r.code||r.name||'')} - ${esc(r.name||r.code||'')}</option>`
+    ).join('') || '<option>لا توجد بيانات</option>';
+    const colOpts = cols.map((k,i) =>
+        `<option value="${k}">${esc(dcols[i]||k)}</option>`
+    ).join('') || '<option>لا توجد أعمدة</option>';
     return `
-        <div style="margin-bottom:15px;padding:12px;background:#f9f9f9;border-radius:8px">
-            <h4 style="margin-bottom:8px;color:#1a7a4c"><i class="fas fa-table-cells"></i> الصفوف (الخلفية + النص)</h4>
+        ${heroCpSection('rows', 'الصفوف', `
+            <div class="cp-hero-selector"><label>الصف:</label>
+                <select id="heroRow" onchange="heroUpdatePreview('rows')">${rowOpts}</select></div>
+            ${heroCpWidget('rows-bg', 'خلفية الصف')}
+            ${heroCpWidget('rows-tx', 'لون النص')}
+            <div class="cp-actions" style="margin-top:8px">
+                <button class="cp-apply" onclick="heroApply('rows')"><i class="fas fa-check"></i> تطبيق</button>
+                <button class="cp-reset" onclick="heroClear('rows')"><i class="fas fa-rotate-left"></i> إزالة</button>
+            </div>
+        `)}
+        ${heroCpSection('cols', 'الأعمدة', `
+            <div class="cp-hero-selector"><label>العمود:</label>
+                <select id="heroCol">${colOpts}</select></div>
+            ${heroCpWidget('cols-tx', 'لون النص')}
+            <div class="cp-actions" style="margin-top:8px">
+                <button class="cp-apply" onclick="heroApply('cols')"><i class="fas fa-check"></i> تطبيق</button>
+                <button class="cp-reset" onclick="heroClear('cols')"><i class="fas fa-rotate-left"></i> إزالة</button>
+            </div>
+        `)}
+        ${heroCpSection('cells', 'الخلايا', `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label style="font-size:12px">الصف:</label>
-                    <select id="cpRow" onchange="updateCpRowPreview()" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:13px">${rowOpts || '<option>لا توجد بيانات</option>'}</select></div>
-                <div style="display:flex;gap:6px;align-items:end;flex-wrap:wrap">
-                    <div><label style="font-size:12px">خلفية</label><input type="color" id="cpRowBg" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;display:block"></div>
-                    <div><label style="font-size:12px">نص</label><input type="color" id="cpRowTx" value="#000000" style="width:40px;height:32px;border:none;cursor:pointer;display:block"></div>
-                    <button class="save-btn" onclick="applyCpRow()" style="padding:6px 12px;font-size:12px">تطبيق</button>
-                    <button onclick="clearCpRow()" style="padding:6px 10px;font-size:11px;background:#e0e0e0;border:none;border-radius:6px;cursor:pointer"><i class="fas fa-rotate-left"></i> إزالة</button>
-                </div>
+                <div class="cp-hero-selector"><label>الصف:</label>
+                    <select id="heroCellRow">${rowOpts}</select></div>
+                <div class="cp-hero-selector"><label>العمود:</label>
+                    <select id="heroCellCol">${colOpts}</select></div>
             </div>
-        </div>
-        <div style="margin-bottom:15px;padding:12px;background:#f9f9f9;border-radius:8px">
-            <h4 style="margin-bottom:8px;color:#1a7a4c"><i class="fas fa-columns"></i> الأعمدة (لون النص)</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label style="font-size:12px">العمود:</label>
-                    <select id="cpCol" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:13px">${colOpts || '<option>لا توجد أعمدة</option>'}</select></div>
-                <div style="display:flex;gap:6px;align-items:end;flex-wrap:wrap">
-                    <div><label style="font-size:12px">لون النص</label><input type="color" id="cpColTx" value="#000000" style="width:40px;height:32px;border:none;cursor:pointer;display:block"></div>
-                    <button class="save-btn" onclick="applyCpCol()" style="padding:6px 12px;font-size:12px">تطبيق</button>
-                    <button onclick="clearCpCol()" style="padding:6px 10px;font-size:11px;background:#e0e0e0;border:none;border-radius:6px;cursor:pointer"><i class="fas fa-rotate-left"></i> إزالة</button>
-                </div>
+            ${heroCpWidget('cells-tx', 'لون النص')}
+            <div class="cp-actions" style="margin-top:8px">
+                <button class="cp-apply" onclick="heroApply('cells')"><i class="fas fa-check"></i> تطبيق</button>
+                <button class="cp-reset" onclick="heroClear('cells')"><i class="fas fa-rotate-left"></i> إزالة</button>
             </div>
-        </div>
-        <div style="padding:12px;background:#f9f9f9;border-radius:8px">
-            <h4 style="margin-bottom:8px;color:#1a7a4c"><i class="fas fa-border-all"></i> الخلايا (لون النص)</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-                <div><label style="font-size:12px">الصف:</label>
-                    <select id="cpCellRow" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:13px">${rowOpts || '<option>لا توجد بيانات</option>'}</select></div>
-                <div><label style="font-size:12px">العمود:</label>
-                    <select id="cpCellCol" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:13px">${colOpts || '<option>لا توجد أعمدة</option>'}</select></div>
-                <div style="display:flex;gap:6px;align-items:end;flex-wrap:wrap">
-                    <div><label style="font-size:12px">لون النص</label><input type="color" id="cpCellTx" value="#000000" style="width:40px;height:32px;border:none;cursor:pointer;display:block"></div>
-                    <button class="save-btn" onclick="applyCpCell()" style="padding:6px 12px;font-size:12px">تطبيق</button>
-                    <button onclick="clearCpCell()" style="padding:6px 10px;font-size:11px;background:#e0e0e0;border:none;border-radius:6px;cursor:pointer"><i class="fas fa-rotate-left"></i> إزالة</button>
-                </div>
-            </div>
-        </div>
+        `)}
     `;
 }
-
-function changeCpSection() {
-    const s = document.getElementById('cpSect').value;
-    document.getElementById('cpBody').innerHTML = renderCpBody(s);
+function heroCpSection(id, label, content) {
+    const active = id === 'rows' ? ' active' : '';
+    return `<div id="hero-${id}" class="cp-hero-section${active}"><div class="cp-hero-selector" style="margin-bottom:10px"><label style="font-size:14px;color:var(--text-primary)"><i class="fas fa-paint-brush"></i> ${label}</label></div>${content}</div>`;
 }
 
-function applyCpRow() {
-    const s = document.getElementById('cpSect').value, idx = Number(document.getElementById('cpRow').value);
-    const arr = SECT_MAP[s]; if (!arr || !arr[idx]) return;
-    arr[idx]._color = document.getElementById('cpRowBg').value !== '#ffffff' ? document.getElementById('cpRowBg').value : undefined;
-    arr[idx]._textColor = document.getElementById('cpRowTx').value !== '#000000' ? document.getElementById('cpRowTx').value : undefined;
-    save(); renderAll(); updateCpRowPreview();
+/* ── HeroUI Color Picker Widget ── */
+function heroCpWidget(id, label) {
+    return `
+    <div class="cp-widget" id="cpw-${id}" data-cp-id="${id}">
+        <div class="cp-widget-header">
+            <span class="swatch-preview" id="cpw-${id}-swatch" style="background:#10b981"></span>
+            <span>${label}</span>
+        </div>
+        <div class="cp-area-wrap">
+            <div class="cp-area" id="cpw-${id}-area" style="background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(160,100%,50%))">
+                <div class="cp-area-thumb" id="cpw-${id}-thumb" style="left:100%;top:0%;background:hsl(160,100%,50%)"></div>
+            </div>
+        </div>
+        <div class="cp-hue-wrap">
+            <div class="cp-slider-track" id="cpw-${id}-hue">
+                <div class="cp-slider-thumb" id="cpw-${id}-huethumb" style="left:44.44%"></div>
+            </div>
+        </div>
+        <div class="cp-field-group">
+            <span class="cp-field-prefix">#</span>
+            <input class="cp-field-input" id="cpw-${id}-hex" value="10B981" maxlength="6" spellcheck="false" oninput="heroHexInput('${id}')">
+        </div>
+        <div class="cp-swatches" id="cpw-${id}-swatches">
+            ${['#ef4444','#f97316','#eab308','#22c55e','#10b981','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#78716c','#000000','#ffffff'].map(c =>
+                `<button class="cp-swatch" style="background:${c}" data-color="${c}" onclick="heroPickSwatch('${id}','${c}')"></button>`
+            ).join('')}
+        </div>
+    </div>`;
 }
-function clearCpRow() {
-    const s = document.getElementById('cpSect').value, idx = Number(document.getElementById('cpRow').value);
-    const arr = SECT_MAP[s]; if (!arr || !arr[idx]) return;
-    arr[idx]._color = undefined; arr[idx]._textColor = undefined; save(); renderAll(); updateCpRowPreview();
+
+/* ── HSB↔Hex color helpers ── */
+function hsb2hex(h,s,b) {
+    s/=100; b/=100; const k=n=>(n+h/60)%6, f=n=>b*(1-s*Math.max(0,Math.min(k(n),4-k(n),1)));
+    const r=Math.round(255*f(5)), g=Math.round(255*f(3)), bl=Math.round(255*f(1));
+    return [r,g,bl].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
 }
-function updateCpRowPreview() {
-    const s = document.getElementById('cpSect').value, idx = Number(document.getElementById('cpRow').value);
-    const arr = SECT_MAP[s]; if (!arr || !arr[idx]) return;
-    const item = arr[idx];
-    document.getElementById('cpRowBg').value = item._color || '#ffffff';
-    document.getElementById('cpRowTx').value = item._textColor || '#000000';
+function hex2hsb(hex) {
+    hex=hex.replace('#',''); if(hex.length<6) hex=hex.split('').map(x=>x+x).join('');
+    const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+    let h=0; if(d){if(mx===r)h=60*(((g-b)/d)%6);else if(mx===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4);}
+    return {h:(h+360)%360, s:mx===0?0:(d/mx)*100, b:mx*100};
 }
-function applyCpCol() {
-    const s = document.getElementById('cpSect').value, col = document.getElementById('cpCol').value;
-    const c = document.getElementById('cpColTx').value;
-    if (!colColors[s]) colColors[s] = {};
-    colColors[s][col] = c !== '#000000' ? c : undefined;
-    if (!colColors[s][col]) delete colColors[s][col];
-    saveColColors(); renderAll();
+function hexColor(hex) { return '#'+hex.replace('#','').toUpperCase(); }
+
+/* ── Initialize a color picker widget ── */
+function initHeroCp(id) {
+    const area = document.getElementById('cpw-'+id+'-area');
+    const thumb = document.getElementById('cpw-'+id+'-thumb');
+    const hueTrack = document.getElementById('cpw-'+id+'-hue');
+    const hueThumb = document.getElementById('cpw-'+id+'-huethumb');
+    const hexInput = document.getElementById('cpw-'+id+'-hex');
+    const swatch = document.getElementById('cpw-'+id+'-swatch');
+
+    let state = hex2hsb(hexInput.value);
+    function updateUI() {
+        const hex = hsb2hex(state.h, state.s, state.b);
+        hexInput.value = hex;
+        swatch.style.background = '#'+hex;
+        const pctS = state.s, pctB = 100-state.b;
+        thumb.style.left = pctS+'%'; thumb.style.top = pctB+'%';
+        thumb.style.background = '#'+hex;
+        area.style.background = `linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(${state.h},100%,50%))`;
+        hueThumb.style.left = (state.h/360*100)+'%';
+    }
+
+    /* Area drag */
+    let dragA=false;
+    area.addEventListener('pointerdown', e => { dragA=true; area.setPointerCapture(e.pointerId); moveA(e); });
+    area.addEventListener('pointermove', e => { if(dragA) moveA(e); });
+    area.addEventListener('pointerup', () => dragA=false);
+    function moveA(e) {
+        const r=area.getBoundingClientRect();
+        state.s=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100));
+        state.b=Math.max(0,Math.min(100,100-((e.clientY-r.top)/r.height)*100));
+        updateUI();
+    }
+
+    /* Hue slider drag */
+    let dragH=false;
+    hueTrack.addEventListener('pointerdown', e => { dragH=true; hueTrack.setPointerCapture(e.pointerId); moveH(e); });
+    hueTrack.addEventListener('pointermove', e => { if(dragH) moveH(e); });
+    hueTrack.addEventListener('pointerup', () => dragH=false);
+    function moveH(e) {
+        const r=hueTrack.getBoundingClientRect();
+        state.h=Math.max(0,Math.min(360,((e.clientX-r.left)/r.width)*360));
+        updateUI();
+    }
+
+    /* Thumb drag visual */
+    thumb.addEventListener('pointerdown', e => { thumb.classList.add('dragging'); });
+    thumb.addEventListener('pointerup', e => { thumb.classList.remove('dragging'); });
+
+    window['_heroCp_'+id] = { state, updateUI };
 }
-function clearCpCol() {
-    const s = document.getElementById('cpSect').value, col = document.getElementById('cpCol').value;
-    if (colColors[s]) delete colColors[s][col];
-    saveColColors(); renderAll();
+
+function heroHexInput(id) {
+    const w = window['_heroCp_'+id]; if(!w) return;
+    const hex = document.getElementById('cpw-'+id+'-hex').value.replace(/[^0-9a-fA-F]/g,'').slice(0,6);
+    document.getElementById('cpw-'+id+'-hex').value = hex;
+    if(hex.length===6) { const hsb=hex2hsb(hex); w.state=hsb; w.updateUI(); }
 }
-function applyCpCell() {
-    const s = document.getElementById('cpSect').value, idx = Number(document.getElementById('cpCellRow').value), col = document.getElementById('cpCellCol').value;
-    const arr = SECT_MAP[s]; if (!arr || !arr[idx]) return;
-    if (!arr[idx]._cellColors) arr[idx]._cellColors = {};
-    arr[idx]._cellColors[col] = document.getElementById('cpCellTx').value !== '#000000' ? document.getElementById('cpCellTx').value : undefined;
-    if (!arr[idx]._cellColors[col]) delete arr[idx]._cellColors[col];
-    save(); renderAll();
+function heroPickSwatch(id, color) {
+    const w = window['_heroCp_'+id]; if(!w) return;
+    w.state = hex2hsb(color.replace('#','')); w.updateUI();
+    document.getElementById('cpw-'+id+'-hex').value = color.replace('#','').toUpperCase();
 }
-function clearCpCell() {
-    const s = document.getElementById('cpSect').value, idx = Number(document.getElementById('cpCellRow').value), col = document.getElementById('cpCellCol').value;
-    const arr = SECT_MAP[s]; if (!arr || !arr[idx]) return;
-    if (arr[idx]._cellColors) delete arr[idx]._cellColors[col];
-    save(); renderAll();
+
+/* ── Apply / Clear ── */
+function heroApply(type) {
+    const sect = document.getElementById('cpSect').value;
+    const arr = SECT_MAP[sect] || [];
+    const hex = '#' + document.getElementById('cpw-'+(type==='rows'?'rows-bg':type==='cols'?'cols-tx':'cells-tx')+'-hex').value;
+    if(type==='rows') {
+        const idx = Number(document.getElementById('heroRow').value);
+        if(!arr[idx]) return;
+        arr[idx]._color = hex;
+        const txHex = '#' + document.getElementById('cpw-rows-tx-hex').value;
+        if(txHex !== '#000000') arr[idx]._textColor = txHex;
+        save(); renderAll();
+    } else if(type==='cols') {
+        const col = document.getElementById('heroCol').value;
+        if(!colColors[sect]) colColors[sect] = {};
+        colColors[sect][col] = hex!=='#000000' ? hex : undefined;
+        if(!colColors[sect][col]) delete colColors[sect][col];
+        saveColColors(); renderAll();
+    } else if(type==='cells') {
+        const idx = Number(document.getElementById('heroCellRow').value);
+        const col = document.getElementById('heroCellCol').value;
+        if(!arr[idx]) return;
+        if(!arr[idx]._cellColors) arr[idx]._cellColors = {};
+        arr[idx]._cellColors[col] = hex!=='#000000' ? hex : undefined;
+        if(!arr[idx]._cellColors[col]) delete arr[idx]._cellColors[col];
+        save(); renderAll();
+    }
 }
+function heroClear(type) {
+    const sect = document.getElementById('cpSect').value;
+    const arr = SECT_MAP[sect] || [];
+    if(type==='rows') {
+        const idx = Number(document.getElementById('heroRow').value);
+        if(!arr[idx]) return;
+        arr[idx]._color = undefined; arr[idx]._textColor = undefined;
+        save(); renderAll();
+    } else if(type==='cols') {
+        const col = document.getElementById('heroCol').value;
+        if(colColors[sect]) delete colColors[sect][col];
+        saveColColors(); renderAll();
+    } else if(type==='cells') {
+        const idx = Number(document.getElementById('heroCellRow').value);
+        const col = document.getElementById('heroCellCol').value;
+        if(arr[idx] && arr[idx]._cellColors) delete arr[idx]._cellColors[col];
+        save(); renderAll();
+    }
+}
+function heroUpdatePreview() {} // placeholder
 
 // ---- Live Clock ----
 function updateClock() {
@@ -320,9 +449,8 @@ function save() {
 
 // ---- Theme ----
 function toggleTheme() {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    document.getElementById('themeBtn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    const isDark = document.body.classList.toggle('dark');
+    document.getElementById('themeBtn').classList.toggle('dark', isDark);
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
     const overlay = document.getElementById('themeOverlay');
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
@@ -332,47 +460,9 @@ function toggleTheme() {
     if (localStorage.getItem('inv_theme') === 'dark') {
         document.body.classList.add('dark');
         const btn = document.getElementById('themeBtn');
-        if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+        if (btn) btn.classList.add('dark');
     }
 })();
-
-/* === Background Selector === */
-const BG_MAP = {
-    default: null,
-    earth: '../photo/planet-earth-dark-3840x2160-26342.jpg',
-    mars: '../photo/mars-red-planet-3840x2160-26347.jpg',
-    jupiter: '../photo/jupiter-dark-3840x2160-26348.png',
-    moon: '../photo/moon-dark-3840x2160-26344.png',
-    mercury: '../photo/planet-mercury-dark-3840x2160-26345.png',
-    venus: '../photo/planet-venus-dark-3840x2160-26351.png',
-    saturn: '../photo/saturn-dark-3840x2160-26350.png',
-};
-
-function toggleBgDropdown() {
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.toggle('show');
-}
-
-function setBg(name) {
-    const overlay = document.getElementById('bgOverlay');
-    const path = BG_MAP[name];
-    overlay.style.backgroundImage = path ? `url(${path})` : 'none';
-    localStorage.setItem('inv_bg', name);
-    document.querySelectorAll('#bgMenu button').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`#bgMenu button[data-bg="${name}"]`);
-    if (btn) btn.classList.add('active');
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.remove('show');
-}
-
-(function loadBg() {
-    setBg(localStorage.getItem('inv_bg') || 'default');
-})();
-
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('bgMenu');
-    if (menu && !e.target.closest('.bg-dropdown')) menu.classList.remove('show');
-});
 
 // ---- Logout ----
 function logout() {
@@ -387,14 +477,12 @@ function switchTab(name) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.remove('active');
-        t.style.opacity = '0';
     });
     const tabBtn = document.querySelector(`.tab[data-tab="${name}"]`);
     if (tabBtn) tabBtn.classList.add('active');
     const target = document.getElementById(`tab-${name}`);
     if (target) {
         target.classList.add('active');
-        setTimeout(() => target.style.opacity = '1', 20);
     }
 }
 
@@ -560,14 +648,31 @@ function renderKahana() {
     tbody.innerHTML = kahana.map((item, i) => {
         return `<tr ${rowStyle(item)}>
         <td ${tdStyle(item,'kahana',c[0])}>${esc(item.name)}</td>
-        <td ${tdStyle(item,'kahana',c[1])}>${esc(item.details || '')}</td>
-        <td ${tdStyle(item,'kahana',c[2])}>${esc(item.notes || '')}</td>
+        <td ${tdStyle(item,'kahana',c[1])}>${esc(item.category || '')}</td>
+        <td ${tdStyle(item,'kahana',c[2])}>${esc(item.details || '')}</td>
+        <td ${tdStyle(item,'kahana',c[3])}>${esc(item.notes || '')}</td>
         <td>${canEdit ? `
             ${getColorBtn(item, 'kahana', i)}
             <button class="action-btn edit-btn" onclick="editKahana(${i})"><i class="fas fa-pen"></i></button>
             <button class="action-btn delete-btn" onclick="deleteKahana(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
         </td>
     </tr>`}).join('');
+}
+
+function updateStats() {
+    const statItems = document.getElementById('statItems');
+    const statIncoming = document.getElementById('statIncoming');
+    const statOutgoing = document.getElementById('statOutgoing');
+    const statLoan = document.getElementById('statLoan');
+    const statLowStock = document.getElementById('statLowStock');
+    if (statItems) statItems.textContent = inventory.length;
+    if (statIncoming) statIncoming.textContent = incoming.length;
+    if (statOutgoing) statOutgoing.textContent = outgoing.length;
+    if (statLoan) statLoan.textContent = loanItems.length;
+    if (statLowStock) {
+        const low = inventory.filter(i => (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0) <= 5).length;
+        statLowStock.textContent = low;
+    }
 }
 
 function renderAll() {
@@ -577,6 +682,8 @@ function renderAll() {
     renderLoan();
     renderLoanIncoming();
     renderKahana();
+    updateTabCounters();
+    updateStats();
 }
 
 // ---- Export Excel ----
@@ -627,7 +734,7 @@ function exportExcel(section) {
         }));
         name = 'الإعارة';
     } else if (section === 'kahana') {
-        data = kahana.map(i => ({ 'الاسم': i.name, 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '' }));
+        data = kahana.map(i => ({ 'الاسم': i.name, 'التصنيف': i.category || '', 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '' }));
         name = 'الكهنة';
     } else if (section === 'loanIncoming') {
         data = loanIncoming.map(r => ({
@@ -653,7 +760,7 @@ function importExcel(event, section) {
             const wb = XLSX.read(data, { type: 'array' });
             const ws = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-            if (!rows || rows.length === 0) { alert('الملف فارغ'); return; }
+            if (!rows || rows.length === 0) { showToast('الملف فارغ'); return; }
 
             let added = 0;
             rows.forEach(row => {
@@ -750,6 +857,7 @@ function importExcel(event, section) {
                     if (!name) return;
                     kahana.push({
                         name,
+                        category: String(row['التصنيف'] || row['category'] || ''),
                         details: String(row['التفاصيل'] || row['details'] || ''),
                         notes: String(row['ملاحظات'] || row['notes'] || '')
                     });
@@ -759,9 +867,9 @@ function importExcel(event, section) {
             save();
             renderAll();
             event.target.value = '';
-            alert(`تم استيراد ${added} سجل بنجاح`);
+            showToast(`تم استيراد ${added} سجل بنجاح`);
         } catch (err) {
-            alert('فشل قراءة الملف: ' + err.message);
+            showToast('فشل قراءة الملف: ' + err.message);
             event.target.value = '';
         }
     };
@@ -811,10 +919,7 @@ function showAddItemModal() {
                 <label>التصنيف</label>
                 <select id="item_category">
                     <option value="">اختر التصنيف</option>
-                    <option>أجهزة طبية</option><option>أجهزة كهربائية</option>
-                    <option>أقمشة وملبوسات</option><option>أثاث مكتبي</option>
-                    <option>مستلزمات طبية</option><option>أدوية</option>
-                    <option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option>
+                    <option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option>
                 </select>
             </div>
             <div class="form-group">
@@ -858,8 +963,8 @@ function showAddItemModal() {
 
 function saveInventoryItem() {
     const code = document.getElementById('item_code').value.trim();
-    if (!code) { alert('يرجى إدخال كود الصنف'); return; }
-    if (inventory.some(i => i.code === code)) { alert('كود الصنف موجود مسبقاً'); return; }
+    if (!code) { showToast('يرجى إدخال كود الصنف'); return; }
+    if (inventory.some(i => i.code === code)) { showToast('كود الصنف موجود مسبقاً'); return; }
     inventory.push({
         code,
         ministryCode: document.getElementById('item_ministry_code').value.trim(),
@@ -902,7 +1007,7 @@ function editInventory(index) {
             </div>
             <div class="form-group">
                 <label>التصنيف</label>
-                <select id="item_category">${(['أجهزة طبية','أجهزة كهربائية','أقمشة وملبوسات','أثاث مكتبي','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
+                <select id="item_category">${(['أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
                     `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
                 ).join('')}</select>
             </div>
@@ -1069,10 +1174,10 @@ function calcIncomingTotal() {
 
 function saveIncoming() {
     const code = document.getElementById('incoming_code').value.trim();
-    if (!code) { alert('يرجى اختيار كود الصنف'); return; }
-    if (!inventory.some(i => i.code === code)) { alert('كود الصنف غير موجود في المخزون'); return; }
+    if (!code) { showToast('يرجى اختيار كود الصنف'); return; }
+    if (!inventory.some(i => i.code === code)) { showToast('كود الصنف غير موجود في المخزون'); return; }
     const qty = Number(document.getElementById('incoming_qty').value) || 0;
-    if (qty <= 0) { alert('الكمية يجب أن تكون أكبر من صفر'); return; }
+    if (qty <= 0) { showToast('الكمية يجب أن تكون أكبر من صفر'); return; }
     const rec = {
         id: generateId(), day: document.getElementById('incoming_day').value,
         date: document.getElementById('incoming_date').value, code,
@@ -1128,7 +1233,7 @@ function updateIncoming(index) {
     if (!rec) return;
     const oldCode = rec.code;
     const newCode = document.getElementById('incoming_code').value.trim();
-    if (!newCode || !inventory.some(i => i.code === newCode)) { alert('يرجى اختيار كود صنف صحيح'); return; }
+    if (!newCode || !inventory.some(i => i.code === newCode)) { showToast('يرجى اختيار كود صنف صحيح'); return; }
     Object.assign(rec, {
         day: document.getElementById('incoming_day').value,
         date: document.getElementById('incoming_date').value,
@@ -1218,14 +1323,14 @@ function calcOutgoingTotal() {
 
 function saveOutgoing() {
     const code = document.getElementById('outgoing_code').value.trim();
-    if (!code) { alert('يرجى اختيار كود الصنف'); return; }
-    if (!inventory.some(i => i.code === code)) { alert('كود الصنف غير موجود في المخزون'); return; }
+    if (!code) { showToast('يرجى اختيار كود الصنف'); return; }
+    if (!inventory.some(i => i.code === code)) { showToast('كود الصنف غير موجود في المخزون'); return; }
     const qty = Number(document.getElementById('outgoing_qty').value) || 0;
-    if (qty <= 0) { alert('الكمية يجب أن تكون أكبر من صفر'); return; }
+    if (qty <= 0) { showToast('الكمية يجب أن تكون أكبر من صفر'); return; }
     const item = inventory.find(i => i.code === code);
     if (item) {
         const rem = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
-        if (qty > rem) { alert(`الرصيد المتبقي غير كافٍ! المتاح: ${rem}`); return; }
+        if (qty > rem) { showToast(`الرصيد المتبقي غير كافٍ! المتاح: ${rem}`); return; }
     }
     const rec = {
         id: generateId(), day: document.getElementById('outgoing_day').value,
@@ -1284,7 +1389,7 @@ function updateOutgoing(index) {
     if (!rec) return;
     const oldCode = rec.code;
     const newCode = document.getElementById('outgoing_code').value.trim();
-    if (!newCode || !inventory.some(i => i.code === newCode)) { alert('يرجى اختيار كود صنف صحيح'); return; }
+    if (!newCode || !inventory.some(i => i.code === newCode)) { showToast('يرجى اختيار كود صنف صحيح'); return; }
     Object.assign(rec, {
         day: document.getElementById('outgoing_day').value,
         date: document.getElementById('outgoing_date').value,
@@ -1342,7 +1447,7 @@ function showAddLoanModal() {
             <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit"></div>
-            <div class="form-group"><label>التصنيف</label><input type="text" id="loan_category"></div>
+            <div class="form-group"><label>التصنيف</label><select id="loan_category"><option value="">اختر التصنيف</option><option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option></select></div>
             <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="0" min="0"></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveLoan()">حفظ</button>
@@ -1354,8 +1459,8 @@ function showAddLoanModal() {
 
 function saveLoan() {
     const code = document.getElementById('loan_code').value.trim();
-    if (!code) { alert('يرجى اختيار كود الصنف'); return; }
-    if (loanItems.some(i => i.code === code)) { alert('هذا الصنف موجود مسبقاً في الإعارة'); return; }
+    if (!code) { showToast('يرجى اختيار كود الصنف'); return; }
+    if (loanItems.some(i => i.code === code)) { showToast('هذا الصنف موجود مسبقاً في الإعارة'); return; }
     loanItems.push({
         code, ministryCode: document.getElementById('loan_ministry_code').value,
         name: document.getElementById('loan_name').value,
@@ -1378,7 +1483,9 @@ function editLoan(index) {
             <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code" value="${esc(item.ministryCode)}"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name" value="${esc(item.name)}"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit" value="${esc(item.unit)}"></div>
-            <div class="form-group"><label>التصنيف</label><input type="text" id="loan_category" value="${esc(item.category)}"></div>
+            <div class="form-group"><label>التصنيف</label><select id="loan_category">${(['','أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
+                `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
+            ).join('')}</select></div>
             <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="${item.openingBalance}" min="0"></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateLoan(${index})">تحديث</button>
@@ -1467,10 +1574,10 @@ function selectLoanIncomingItem() {
 
 function saveLoanIncoming() {
     const code = document.getElementById('loan_incoming_code').value.trim();
-    if (!code) { alert('يرجى اختيار كود الصنف'); return; }
-    if (!loanItems.some(i => i.code === code)) { alert('كود الصنف غير موجود في الإعارة'); return; }
+    if (!code) { showToast('يرجى اختيار كود الصنف'); return; }
+    if (!loanItems.some(i => i.code === code)) { showToast('كود الصنف غير موجود في الإعارة'); return; }
     const qty = Number(document.getElementById('loan_incoming_qty').value) || 0;
-    if (qty <= 0) { alert('الكمية يجب أن تكون أكبر من صفر'); return; }
+    if (qty <= 0) { showToast('الكمية يجب أن تكون أكبر من صفر'); return; }
     loanIncoming.push({
         id: generateId(), day: document.getElementById('loan_incoming_day').value,
         date: document.getElementById('loan_incoming_date').value, code,
@@ -1517,7 +1624,7 @@ function updateLoanIncoming(index) {
     if (!rec) return;
     const oldCode = rec.code;
     const newCode = document.getElementById('loan_incoming_code').value.trim();
-    if (!newCode || !loanItems.some(i => i.code === newCode)) { alert('يرجى اختيار كود صنف صحيح'); return; }
+    if (!newCode || !loanItems.some(i => i.code === newCode)) { showToast('يرجى اختيار كود صنف صحيح'); return; }
     Object.assign(rec, {
         day: document.getElementById('loan_incoming_day').value,
         date: document.getElementById('loan_incoming_date').value,
@@ -1552,6 +1659,7 @@ function showAddKahanaModal() {
     openModal('إضافة كهنة', `
         <div class="form-grid">
             <div class="form-group full"><label>الاسم</label><input type="text" id="kahana_name" placeholder="الاسم"></div>
+            <div class="form-group"><label>التصنيف</label><select id="kahana_category"><option value="">اختر التصنيف</option><option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option></select></div>
             <div class="form-group full"><label>التفاصيل</label><textarea id="kahana_details"></textarea></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="kahana_notes"></textarea></div>
             <div class="form-actions">
@@ -1564,9 +1672,10 @@ function showAddKahanaModal() {
 
 function saveKahana() {
     const name = document.getElementById('kahana_name').value.trim();
-    if (!name) { alert('يرجى إدخال الاسم'); return; }
+    if (!name) { showToast('يرجى إدخال الاسم'); return; }
     kahana.push({
         id: generateId(), name,
+        category: document.getElementById('kahana_category').value,
         details: document.getElementById('kahana_details').value.trim(),
         notes: document.getElementById('kahana_notes').value.trim()
     });
@@ -1581,6 +1690,9 @@ function editKahana(index) {
     openModal('تعديل كهنة', `
         <div class="form-grid">
             <div class="form-group full"><label>الاسم</label><input type="text" id="kahana_name" value="${esc(item.name)}"></div>
+            <div class="form-group"><label>التصنيف</label><select id="kahana_category">${(['','أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
+                `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
+            ).join('')}</select></div>
             <div class="form-group full"><label>التفاصيل</label><textarea id="kahana_details">${esc(item.details || '')}</textarea></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="kahana_notes">${esc(item.notes || '')}</textarea></div>
             <div class="form-actions">
@@ -1596,6 +1708,7 @@ function updateKahana(index) {
     if (!item) return;
     Object.assign(item, {
         name: document.getElementById('kahana_name').value.trim(),
+        category: document.getElementById('kahana_category').value,
         details: document.getElementById('kahana_details').value.trim(),
         notes: document.getElementById('kahana_notes').value.trim()
     });
@@ -1613,5 +1726,53 @@ function deleteKahana(index) {
     renderAll();
 }
 
+// ---- Tab Counters ----
+function updateTabCounters() {
+    const map = { inventory: inventory.length, incoming: incoming.length, outgoing: outgoing.length, loan: loanItems.length, kahana: kahana.length };
+    document.querySelectorAll('.tab').forEach(t => {
+        const key = t.dataset.tab;
+        const old = t.querySelector('.badge');
+        if (old) old.remove();
+        if (key && map[key] !== undefined) {
+            const b = document.createElement('span'); b.className = 'badge'; b.textContent = map[key];
+            t.appendChild(b);
+        }
+    });
+}
+
+// ---- Scroll-to-Top ----
+window.addEventListener('scroll', function() {
+    document.getElementById('scrollTopBtn').classList.toggle('visible', window.scrollY > 300);
+});
+
+// ---- Ripple Effect ----
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.toolbar button, .action-btn, .form-actions button, .tab, .btn-action, .navbar-btn');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const span = document.createElement('span');
+    span.style.cssText = `position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:${y}px;left:${x}px;transform:scale(0);animation:rippleAnim 0.6s ease-out;pointer-events:none;`;
+    btn.style.position = 'relative'; btn.style.overflow = 'hidden';
+    btn.appendChild(span);
+    setTimeout(() => span.remove(), 600);
+});
+
+// ---- Sidebar toggle (mobile) ----
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+
 // ---- Initial render ----
 renderAll();
+updateTabCounters();
+
+// Auto-switch tab from URL hash (e.g., #tab-incoming)
+if (window.location.hash) {
+    const tab = window.location.hash.replace('#tab-', '');
+    if (tab && document.getElementById(`tab-${tab}`)) {
+        sidebarTab(tab);
+    }
+}

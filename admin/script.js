@@ -67,9 +67,8 @@ function setActiveHeartbeat() {
 }
 
 function toggleTheme() {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    document.getElementById('themeBtn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    const isDark = document.body.classList.toggle('dark');
+    document.getElementById('themeBtn').classList.toggle('dark', isDark);
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
     const overlay = document.getElementById('themeOverlay');
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
@@ -79,50 +78,12 @@ function toggleTheme() {
     if (localStorage.getItem('inv_theme') === 'dark') {
         document.body.classList.add('dark');
         const btn = document.getElementById('themeBtn');
-        if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+        if (btn) btn.classList.add('dark');
     }
 })();
 
-/* === Background Selector === */
-const BG_MAP = {
-    default: null,
-    earth: '../photo/planet-earth-dark-3840x2160-26342.jpg',
-    mars: '../photo/mars-red-planet-3840x2160-26347.jpg',
-    jupiter: '../photo/jupiter-dark-3840x2160-26348.png',
-    moon: '../photo/moon-dark-3840x2160-26344.png',
-    mercury: '../photo/planet-mercury-dark-3840x2160-26345.png',
-    venus: '../photo/planet-venus-dark-3840x2160-26351.png',
-    saturn: '../photo/saturn-dark-3840x2160-26350.png',
-};
-
-function toggleBgDropdown() {
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.toggle('show');
-}
-
-function setBg(name) {
-    const overlay = document.getElementById('bgOverlay');
-    const path = BG_MAP[name];
-    overlay.style.backgroundImage = path ? `url(${path})` : 'none';
-    localStorage.setItem('inv_bg', name);
-    document.querySelectorAll('#bgMenu button').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`#bgMenu button[data-bg="${name}"]`);
-    if (btn) btn.classList.add('active');
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.remove('show');
-}
-
-(function loadBg() {
-    setBg(localStorage.getItem('inv_bg') || 'default');
-})();
-
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('bgMenu');
-    if (menu && !e.target.closest('.bg-dropdown')) menu.classList.remove('show');
-});
-
 function goInventory() {
-    window.location.href = '../inventory/index.html';
+    navigateWithProgress('../inventory/index.html');
 }
 
 function logout() {
@@ -137,15 +98,22 @@ function renderUsers() {
     const users = getUsers();
     tbody.innerHTML = users.map((u, i) => `
         <tr>
-            <td>${esc(u.username)}</td>
+            <td><span class="user-name">${esc(u.username)}</span></td>
             <td><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
-            <td>${u.canEdit ? '<i class="fas fa-check" style="color:#27ae60"></i> نعم' : '<i class="fas fa-xmark" style="color:#e74c3c"></i> لا'}</td>
+            <td>${u.canEdit ? '<span class="badge-yes"><i class="fas fa-check"></i> نعم</span>' : '<span class="badge-no"><i class="fas fa-xmark"></i> لا</span>'}</td>
             <td>
                 <button class="action-btn edit-btn" onclick="editUser(${i})"><i class="fas fa-pen"></i></button>
                 ${u.role !== 'admin' ? `<button class="action-btn delete-btn" onclick="deleteUser(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
             </td>
         </tr>
     `).join('');
+    const admins = users.filter(u => u.role === 'admin').length;
+    const regular = users.filter(u => u.role === 'user').length;
+    document.getElementById('statTotalUsers').textContent = users.length;
+    document.getElementById('statAdmins').textContent = admins;
+    document.getElementById('statUsers').textContent = regular;
+    const active = getActiveUsers().length;
+    document.getElementById('statActive').textContent = active;
 }
 
 function showAddUserModal() {
@@ -177,14 +145,24 @@ function showAddUserModal() {
     `);
 }
 
+function showToast(msg, type) {
+    const c = document.getElementById('toastContainer') || (() => {
+        const el = document.createElement('div'); el.id = 'toastContainer'; el.className = 'toast-container';
+        document.body.appendChild(el); return el;
+    })();
+    const t = document.createElement('div'); t.className = 'toast ' + (type || 'info'); t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 3200);
+}
+
 function saveUser() {
     const username = document.getElementById('user_username').value.trim();
     const role = document.getElementById('user_role').value;
     const canEdit = document.getElementById('user_canEdit').value === 'true';
-    if (!username) { alert('يرجى إدخال اسم المستخدم'); return; }
+    if (!username) { showToast('يرجى إدخال اسم المستخدم'); return; }
     const users = getUsers();
     if (users.some(u => u.username === username)) {
-        alert('اسم المستخدم موجود مسبقاً');
+        showToast('اسم المستخدم موجود مسبقاً');
         return;
     }
     users.push({ username, role, canEdit });
@@ -260,6 +238,12 @@ function closeModal() {
     document.getElementById('modal').classList.remove('active');
 }
 
+// ---- Sidebar toggle (mobile) ----
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+
 // ---- Active Users Monitor ----
 function getActiveUsers() {
     const sessions = safeParse('inv_sessions', {});
@@ -278,8 +262,10 @@ function getActiveUsers() {
 function renderActiveUsers() {
     const list = document.getElementById('activeUsersList');
     const active = getActiveUsers();
+    const activeEl = document.getElementById('statActive');
+    if (activeEl) activeEl.textContent = active.length;
     if (active.length === 0) {
-        list.innerHTML = '<span style="color:#888;font-size:13px">لا يوجد مستخدمون نشطون</span>';
+        list.innerHTML = '<span class="bar-empty">لا يوجد مستخدمون نشطون</span>';
         return;
     }
     list.innerHTML = active.map(u =>
@@ -296,3 +282,17 @@ setInterval(renderActiveUsers, 5000);
 renderActiveUsers();
 
 renderUsers();
+
+window.addEventListener('scroll', function() {
+    const btn = document.getElementById('scrollTopBtn');
+    if (btn) btn.classList.toggle('visible', window.scrollY > 300);
+});
+
+function adminTab(name) {
+    document.querySelectorAll('.sidebar-nav .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const link = document.querySelector(`.sidebar-nav .tab[data-tab="${name}"]`);
+    if (link) link.classList.add('active');
+    const section = document.getElementById(`tab-${name}`);
+    if (section) section.classList.add('active');
+}

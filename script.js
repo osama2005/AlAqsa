@@ -37,6 +37,17 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+function detectKeyboardLang(e) {
+    const el = document.getElementById('kbLang');
+    if (!el) return;
+    const key = e.key;
+    if (key.length !== 1) return;
+    const code = key.charCodeAt(0);
+    const isArabic = code >= 0x0600 && code <= 0x06FF || code >= 0x0750 && code <= 0x077F || code >= 0x08A0 && code <= 0x08FF || code === 0x061F || code === 0x0660 || code === 0x0020;
+    if (isArabic) { el.textContent = 'AR'; el.className = 'kb-badge ar'; }
+    else if (code >= 0x0041 && code <= 0x005A || code >= 0x0061 && code <= 0x007A || code >= 0x0030 && code <= 0x0039) { el.textContent = 'EN'; el.className = 'kb-badge en'; }
+}
+
 function toggleUserVis() {
     const input = document.getElementById('username');
     const btn = document.getElementById('toggleUserBtn');
@@ -48,6 +59,16 @@ function toggleUserVis() {
         btn.innerHTML = '<i class="fas fa-eye"></i>';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('username');
+    if (input) {
+        input.addEventListener('keydown', detectKeyboardLang);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    }
+});
 
 (function seed() {
     if (!localStorage.getItem('inv_users')) {
@@ -90,13 +111,15 @@ function login() {
     localStorage.setItem('inv_auth', 'active');
     localStorage.setItem('inv_current_user', JSON.stringify(user));
     setActiveHeartbeat();
+    const overlay = document.getElementById('successOverlay');
+    if (overlay) overlay.classList.add('active');
     setTimeout(() => {
         if (user.role === 'admin') {
             window.location.href = 'admin/index.html';
         } else {
             window.location.href = 'inventory/index.html';
         }
-    }, 300);
+    }, 1200);
 }
 
 (function loadTheme() {
@@ -107,8 +130,7 @@ function login() {
 
 function setThemeIcons(isDark) {
     const icon = isDark ? 'fa-sun' : 'fa-moon';
-    const label = isDark ? ' فاتح' : ' الوضع الليلي';
-    document.querySelectorAll('.theme-toggle').forEach(b => b.innerHTML = `<i class="fas ${icon}"></i>${label}`);
+    document.querySelectorAll('.theme-toggle').forEach(b => b.innerHTML = `<i class="fas ${icon}"></i>`);
 }
 
 function toggleTheme() {
@@ -124,41 +146,5 @@ function toggleTheme() {
     if (isDark) setThemeIcons(true);
 })();
 
-/* === Background Selector === */
-const BG_MAP = {
-    default: null,
-    earth: 'photo/planet-earth-dark-3840x2160-26342.jpg',
-    mars: 'photo/mars-red-planet-3840x2160-26347.jpg',
-    jupiter: 'photo/jupiter-dark-3840x2160-26348.png',
-    moon: 'photo/moon-dark-3840x2160-26344.png',
-    mercury: 'photo/planet-mercury-dark-3840x2160-26345.png',
-    venus: 'photo/planet-venus-dark-3840x2160-26351.png',
-    saturn: 'photo/saturn-dark-3840x2160-26350.png',
-};
 
-function toggleBgDropdown() {
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.toggle('show');
-}
 
-function setBg(name) {
-    const overlay = document.getElementById('bgOverlay');
-    const path = BG_MAP[name];
-    overlay.style.backgroundImage = path ? `url(${path})` : 'none';
-    localStorage.setItem('inv_bg', name);
-    document.querySelectorAll('#bgMenu button').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`#bgMenu button[data-bg="${name}"]`);
-    if (btn) btn.classList.add('active');
-    const menu = document.getElementById('bgMenu');
-    if (menu) menu.classList.remove('show');
-}
-
-(function loadBg() {
-    const saved = localStorage.getItem('inv_bg');
-    if (saved) setBg(saved);
-})();
-
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('bgMenu');
-    if (menu && !e.target.closest('.bg-dropdown')) menu.classList.remove('show');
-});
