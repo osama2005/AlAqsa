@@ -60,6 +60,14 @@
     font-size: 13px;
 }
 
+.pass-mask {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    direction: ltr;
+    display: inline-block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .stat-card {

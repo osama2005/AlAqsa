@@ -48,9 +48,10 @@ function detectKeyboardLang(e) {
     else if (code >= 0x0041 && code <= 0x005A || code >= 0x0061 && code <= 0x007A || code >= 0x0030 && code <= 0x0039) { el.textContent = 'EN'; el.className = 'kb-badge en'; }
 }
 
-function toggleUserVis() {
-    const input = document.getElementById('username');
-    const btn = document.getElementById('toggleUserBtn');
+function togglePass() {
+    const input = document.getElementById('password');
+    const btn = document.getElementById('togglePassBtn');
+    if (!input || !btn) return;
     if (input.type === 'password') {
         input.type = 'text';
         btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
@@ -61,10 +62,16 @@ function toggleUserVis() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('username');
-    if (input) {
-        input.addEventListener('keydown', detectKeyboardLang);
-        input.addEventListener('keydown', function(e) {
+    const username = document.getElementById('username');
+    const password = document.getElementById('password');
+    if (username) {
+        username.addEventListener('keydown', detectKeyboardLang);
+        username.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    }
+    if (password) {
+        password.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') login();
         });
     }
@@ -73,8 +80,22 @@ document.addEventListener('DOMContentLoaded', function() {
 (function seed() {
     if (!localStorage.getItem('inv_users')) {
         localStorage.setItem('inv_users', JSON.stringify([
-            { username: 'admin123', role: 'admin', canEdit: true }
+            { username: 'admin123', password: '2005', role: 'admin', canEdit: true }
         ]));
+    } else {
+        var users = safeParse('inv_users', []);
+        var changed = false;
+        for (var i = 0; i < users.length; i++) {
+            if (!users[i].password) {
+                if (users[i].username === 'admin123') {
+                    users[i].password = '2005';
+                } else {
+                    users[i].password = '1234';
+                }
+                changed = true;
+            }
+        }
+        if (changed) localStorage.setItem('inv_users', JSON.stringify(users));
     }
 })();
 
@@ -88,9 +109,15 @@ function setActiveHeartbeat() {
 
 function login() {
     const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
     const errorEl = document.getElementById('errorMsg');
     if (!username) {
         errorEl.textContent = 'الرجاء إدخال اسم المستخدم';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (!password) {
+        errorEl.textContent = 'الرجاء إدخال كلمة المرور';
         errorEl.style.display = 'block';
         return;
     }
@@ -102,7 +129,12 @@ function login() {
     }
     const user = users.find(u => u && u.username === username);
     if (!user) {
-        errorEl.textContent = 'اسم المستخدم غير صحيح';
+        errorEl.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (user.password !== password) {
+        errorEl.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
         errorEl.style.display = 'block';
         return;
     }

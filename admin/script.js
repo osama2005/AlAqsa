@@ -99,6 +99,7 @@ function renderUsers() {
     tbody.innerHTML = users.map((u, i) => `
         <tr>
             <td><span class="user-name">${esc(u.username)}</span></td>
+            <td><span class="pass-mask">${u.password ? '•'.repeat(Math.min(u.password.length, 10)) : '—'}</span></td>
             <td><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
             <td>${u.canEdit ? '<span class="badge-yes"><i class="fas fa-check"></i> نعم</span>' : '<span class="badge-no"><i class="fas fa-xmark"></i> لا</span>'}</td>
             <td>
@@ -122,6 +123,10 @@ function showAddUserModal() {
             <div class="form-group">
                 <label>اسم المستخدم</label>
                 <input type="text" id="user_username" placeholder="أدخل اسم المستخدم">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="text" id="user_password" placeholder="أدخل كلمة المرور">
             </div>
             <div class="form-group">
                 <label>الدور</label>
@@ -157,15 +162,17 @@ function showToast(msg, type) {
 
 function saveUser() {
     const username = document.getElementById('user_username').value.trim();
+    const password = document.getElementById('user_password').value.trim();
     const role = document.getElementById('user_role').value;
     const canEdit = document.getElementById('user_canEdit').value === 'true';
     if (!username) { showToast('يرجى إدخال اسم المستخدم'); return; }
+    if (!password) { showToast('يرجى إدخال كلمة المرور'); return; }
     const users = getUsers();
     if (users.some(u => u.username === username)) {
         showToast('اسم المستخدم موجود مسبقاً');
         return;
     }
-    users.push({ username, role, canEdit });
+    users.push({ username, password, role, canEdit });
     saveUsers(users);
     renderUsers();
     closeModal();
@@ -180,6 +187,10 @@ function editUser(index) {
             <div class="form-group">
                 <label>اسم المستخدم</label>
                 <input type="text" id="user_username" value="${esc(user.username)}" readonly="readonly">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="text" id="user_password" value="${esc(user.password || '')}" placeholder="اترك فارغاً إن لم ترد التغيير">
             </div>
             <div class="form-group">
                 <label>الدور</label>
@@ -211,6 +222,8 @@ function updateUser(index) {
         user.role = document.getElementById('user_role').value;
     }
     user.canEdit = document.getElementById('user_canEdit').value === 'true';
+    const newPass = document.getElementById('user_password').value.trim();
+    if (newPass) user.password = newPass;
     saveUsers(users);
     renderUsers();
     closeModal();
