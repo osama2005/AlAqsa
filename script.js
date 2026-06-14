@@ -1,3 +1,50 @@
+// ---- Starfield ----
+(function() {
+    var c = document.getElementById('starfield');
+    if (!c) return;
+    var ctx = c.getContext('2d');
+    var stars = [], mx = 0, my = 0;
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    function init(n) {
+        stars = [];
+        for (var i = 0; i < n; i++) {
+            stars.push({
+                x: Math.random() * c.width, y: Math.random() * c.height,
+                s: Math.random() * 2 + 0.4, d: Math.random() * 3 + 1,
+                t: Math.random() * 0.02 + 0.003, p: Math.random() * 6.28,
+                o: Math.random() * 0.4 + 0.5
+            });
+        }
+    }
+    function draw() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        var time = Date.now() * 0.001;
+        for (var i = 0; i < stars.length; i++) {
+            var st = stars[i];
+            var dx = (mx / c.width - 0.5) * st.d * 6;
+            var dy = (my / c.height - 0.5) * st.d * 6;
+            var tw = Math.sin(time * st.t + st.p) * 0.3 + 0.7;
+            var op = st.o * tw;
+            ctx.beginPath();
+            ctx.arc(st.x + dx, st.y + dy, st.s, 0, 6.28);
+            ctx.fillStyle = 'rgba(255,255,255,' + op + ')';
+            ctx.fill();
+            if (st.s > 1.8) {
+                ctx.beginPath();
+                ctx.arc(st.x + dx, st.y + dy, st.s * 3, 0, 6.28);
+                ctx.fillStyle = 'rgba(200,220,255,' + (op * 0.08) + ')';
+                ctx.fill();
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+    document.addEventListener('mousemove', function(e) { mx = e.clientX; my = e.clientY; });
+    window.addEventListener('resize', function() { resize(); init(220); });
+    resize();
+    init(220);
+    draw();
+})();
+
 function safeParse(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch(e) { return fallback; }
 }

@@ -413,6 +413,71 @@ let loanIncoming = safeParse('inv_loan_incoming', []);
 let kahana      = safeParse('inv_kahana', []);
 const SECT_MAP = { inventory, incoming, outgoing, loan: loanItems, loanIncoming, kahana };
 
+// ---- Dynamic Field Lists (units, categories, types) ----
+function getFieldList(key) { return safeParse(key, []); }
+function saveFieldList(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
+
+function fieldSelectHtml(key, id, selected, placeholder) {
+    let items = getFieldList(key);
+    if (selected && !items.includes(selected)) {
+        items = [selected, ...items];
+        saveFieldList(key, items);
+    }
+    return `<div class="unit-field-wrap">
+        <select id="${id}">
+            <option value="">${placeholder}</option>
+            ${items.map(v => `<option ${v === selected ? 'selected' : ''}>${esc(v)}</option>`).join('')}
+        </select>
+        <button type="button" class="btn-add-unit" onclick="addFieldItem('${key}', '${id}', '${placeholder}')" title="إضافة جديد">+</button>
+    </div>`;
+}
+
+function addFieldItem(key, selectId, placeholder) {
+    const name = prompt('أدخل القيمة الجديدة:');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    let items = getFieldList(key);
+    if (items.includes(trimmed)) { showToast('القيمة موجودة مسبقاً'); return; }
+    items.push(trimmed);
+    items.sort();
+    saveFieldList(key, items);
+    const sel = document.getElementById(selectId);
+    if (sel) {
+        sel.innerHTML = '<option value="">' + placeholder + '</option>' +
+            items.map(v => `<option ${v === trimmed ? 'selected' : ''}>${esc(v)}</option>`).join('');
+        sel.value = trimmed;
+    }
+}
+
+// Seed units from existing data
+if (!safeParse('inv_units', null)) {
+    const s = new Set();
+    inventory.forEach(i => { if (i.unit) s.add(i.unit); });
+    loanItems.forEach(i => { if (i.unit) s.add(i.unit); });
+    localStorage.setItem('inv_units', JSON.stringify(Array.from(s).sort()));
+}
+// Seed categories from existing data
+if (!safeParse('inv_categories', null)) {
+    const s = new Set(['أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']);
+    inventory.forEach(i => { if (i.category) s.add(i.category); });
+    loanItems.forEach(i => { if (i.category) s.add(i.category); });
+    localStorage.setItem('inv_categories', JSON.stringify(Array.from(s).sort()));
+}
+// Seed types from existing data
+if (!safeParse('inv_types', null)) {
+    const s = new Set(['مستهلك', 'مستديم']);
+    inventory.forEach(i => { if (i.type) s.add(i.type); });
+    localStorage.setItem('inv_types', JSON.stringify(Array.from(s).sort()));
+}
+
+// Convenience wrappers
+function unitFieldHtml(id, selected) { return fieldSelectHtml('inv_units', id, selected, 'اختر الوحدة'); }
+function categoryFieldHtml(id, selected) { return fieldSelectHtml('inv_categories', id, selected, 'اختر التصنيف'); }
+function typeFieldHtml(id, selected) { return fieldSelectHtml('inv_types', id, selected, 'اختر النوع'); }
+function addNewUnit(selectId) { addFieldItem('inv_units', selectId, 'اختر الوحدة'); }
+function addNewCategory(selectId) { addFieldItem('inv_categories', selectId, 'اختر التصنيف'); }
+function addNewType(selectId) { addFieldItem('inv_types', selectId, 'اختر النوع'); }
+
 // ---- Audio ----
 function playSound(type) {
     try {
@@ -913,21 +978,15 @@ function showAddItemModal() {
             </div>
             <div class="form-group">
                 <label>الوحدة</label>
-                <input type="text" id="item_unit" placeholder="مثال: عدد، كرتون">
+                ${unitFieldHtml('item_unit', '')}
             </div>
             <div class="form-group">
                 <label>التصنيف</label>
-                <select id="item_category">
-                    <option value="">اختر التصنيف</option>
-                    <option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option>
-                </select>
+                ${categoryFieldHtml('item_category', '')}
             </div>
             <div class="form-group">
                 <label>النوع</label>
-                <select id="item_type">
-                    <option value="مستهلك">مستهلك</option>
-                    <option value="مستديم">مستديم</option>
-                </select>
+                ${typeFieldHtml('item_type', '')}
             </div>
             <div class="form-group">
                 <label>رصيد أول المدة</label>
@@ -1003,20 +1062,15 @@ function editInventory(index) {
             </div>
             <div class="form-group">
                 <label>الوحدة</label>
-                <input type="text" id="item_unit" value="${esc(item.unit)}">
+                ${unitFieldHtml('item_unit', item.unit)}
             </div>
             <div class="form-group">
                 <label>التصنيف</label>
-                <select id="item_category">${(['أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
-                    `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
-                ).join('')}</select>
+                ${categoryFieldHtml('item_category', item.category)}
             </div>
             <div class="form-group">
                 <label>النوع</label>
-                <select id="item_type">
-                    <option ${item.type === 'مستهلك' ? 'selected' : ''} value="مستهلك">مستهلك</option>
-                    <option ${item.type === 'مستديم' ? 'selected' : ''} value="مستديم">مستديم</option>
-                </select>
+                ${typeFieldHtml('item_type', item.type)}
             </div>
             <div class="form-group">
                 <label>رصيد أول المدة</label>
@@ -1447,7 +1501,7 @@ function showAddLoanModal() {
             <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit"></div>
-            <div class="form-group"><label>التصنيف</label><select id="loan_category"><option value="">اختر التصنيف</option><option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option></select></div>
+            <div class="form-group"><label>التصنيف</label>${categoryFieldHtml('loan_category', '')}</div>
             <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="0" min="0"></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveLoan()">حفظ</button>
@@ -1483,9 +1537,7 @@ function editLoan(index) {
             <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code" value="${esc(item.ministryCode)}"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name" value="${esc(item.name)}"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit" value="${esc(item.unit)}"></div>
-            <div class="form-group"><label>التصنيف</label><select id="loan_category">${(['','أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى']).map(c =>
-                `<option ${c === item.category ? 'selected' : ''}>${esc(c)}</option>`
-            ).join('')}</select></div>
+            <div class="form-group"><label>التصنيف</label>${categoryFieldHtml('loan_category', item.category)}</div>
             <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="${item.openingBalance}" min="0"></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateLoan(${index})">تحديث</button>

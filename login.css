@@ -3,7 +3,7 @@
 body {
     font-family: 'Marhey', sans-serif;
     min-height: 100vh;
-    background: url('photo/Z1.jpg') center/cover no-repeat fixed;
+    background: radial-gradient(ellipse at center, #0f1629 0%, #060a12 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -11,12 +11,13 @@ body {
     position: relative;
 }
 
-/* ===== Background Overlay ===== */
-.bg-overlay {
+/* ===== Starfield Canvas ===== */
+#starfield {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.15);
-    z-index: 1;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
     pointer-events: none;
 }
 
