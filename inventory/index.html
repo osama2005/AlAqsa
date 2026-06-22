@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script>
-if (window.innerWidth <= 1024) { document.getElementById('sidebar').classList.add('collapsed'); }
 function sidebarTab(n) {
     if (n === 'incoming' || n === 'outgoing') { n = 'inventory'; }
     switchTab(n);
@@ -45,7 +44,7 @@ if (window.location.hash) {
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- ===== Sidebar ===== -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar collapsed" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon"><i class="fas fa-warehouse"></i></div>
             <div class="brand-text">
@@ -61,7 +60,7 @@ if (window.location.hash) {
                 <i class="fas fa-hand-holding-box"></i> <span>الإعارة</span>
             </a>
             <a class="tab" data-tab="kahana" onclick="sidebarTab('kahana')">
-                <i class="fas fa-people-group"></i> <span>الكهنة</span>
+                <i class="fas fa-people-group"></i> <span>راكد</span>
             </a>
             <a class="tab" data-tab="categories" onclick="sidebarTab('categories')">
                 <i class="fas fa-tags"></i> <span>التصنيفات</span>
@@ -76,6 +75,7 @@ if (window.location.hash) {
             <a onclick="toggleSidebar()" class="sidebar-toggle"><i class="fas fa-chevron-right"></i> <span>طي القائمة</span></a>
         </div>
     </aside>
+    <script>if (window.innerWidth > 1024){document.getElementById('sidebar').classList.remove('collapsed')}</script>
 
     <!-- ===== Main Content ===== -->
     <div class="main-content">
@@ -179,7 +179,7 @@ if (window.location.hash) {
                                         <tr>
                                             <th>الكود</th><th>كود وزارة</th><th>اسم الصنف</th><th>الوحدة</th>
                                             <th>التصنيف</th><th>النوع</th><th>رصيد أول</th><th>وارد</th>
-                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>إجراءات</th>
+                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="inventoryTableBody"></tbody>
@@ -209,7 +209,7 @@ if (window.location.hash) {
                                         <tr>
                                             <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
                                             <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="incomingTableBody"></tbody>
@@ -239,7 +239,7 @@ if (window.location.hash) {
                                         <tr>
                                             <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
                                             <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="outgoingTableBody"></tbody>
@@ -288,7 +288,7 @@ if (window.location.hash) {
                                     <thead>
                                         <tr>
                                             <th>كود</th><th>كود وزارة</th><th>الاسم</th><th>الوحدة</th>
-                                            <th>التصنيف</th><th>رصيد أول</th><th>وارد</th><th>صادر</th><th>المتبقي</th><th>إجراءات</th>
+                                            <th>التصنيف</th><th>رصيد أول</th><th>وارد</th><th>صادر</th><th>المتبقي</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="loanTableBody"></tbody>
@@ -316,7 +316,7 @@ if (window.location.hash) {
                                     <thead>
                                         <tr>
                                             <th>اليوم</th><th>التاريخ</th><th>كود</th><th>الاسم</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="loanIncomingBody"></tbody>
@@ -334,11 +334,11 @@ if (window.location.hash) {
                 </div>
             </section>
 
-            <!-- == الكهنة == -->
+            <!-- == راكد == -->
             <section id="tab-kahana" class="tab-content">
                 <div class="sub-tabs">
                     <button class="sub-tab active" data-sub="list" onclick="subTab('tab-kahana','list')">
-                        <i class="fas fa-people-group"></i> الكهنة
+                        <i class="fas fa-people-group"></i> راكد
                     </button>
                     <button class="sub-tab" data-sub="incoming" onclick="subTab('tab-kahana','incoming')">
                         <i class="fas fa-arrow-down"></i> وارد / إضافة
@@ -351,7 +351,7 @@ if (window.location.hash) {
                 <div id="tab-kahana-list" class="sub-content active">
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-people-group" style="color:#ec4899"></i> الكهنة</h2>
+                            <h2><i class="fas fa-people-group" style="color:#ec4899"></i> راكد</h2>
                             <div class="toolbar-actions">
                                 <button class="btn-action" onclick="showAddKahanaModal()"><i class="fas fa-plus"></i> إضافة</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
@@ -365,7 +365,7 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>الاسم</th><th>التصنيف</th><th>التفاصيل</th><th>ملاحظات</th><th>إجراءات</th>
+                                            <th>الاسم</th><th>التصنيف</th><th>التفاصيل</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="kahanaTableBody"></tbody>
@@ -377,14 +377,14 @@ if (window.location.hash) {
 
                 <div id="tab-kahana-incoming" class="sub-content">
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-arrow-down" style="color:#3b82f6"></i> وارد الكهنة</h2></div>
+                        <div class="card-header"><h2><i class="fas fa-arrow-down" style="color:#3b82f6"></i> وارد راكد</h2></div>
                         <div class="card-body"><p style="text-align:center;padding:2rem;color:var(--text-sec)">قريباً...</p></div>
                     </div>
                 </div>
 
                 <div id="tab-kahana-outgoing" class="sub-content">
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> صادر الكهنة</h2></div>
+                        <div class="card-header"><h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> صادر راكد</h2></div>
                         <div class="card-body"><p style="text-align:center;padding:2rem;color:var(--text-sec)">قريباً...</p></div>
                     </div>
                 </div>

@@ -17,7 +17,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- ===== Sidebar ===== -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar collapsed" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon"><i class="fas fa-crown"></i></div>
             <div class="brand-text">
@@ -41,6 +41,7 @@
             <a onclick="toggleSidebar()" class="sidebar-toggle"><i class="fas fa-chevron-right"></i> <span>طي القائمة</span></a>
         </div>
     </aside>
+    <script>if (window.innerWidth > 1024){document.getElementById('sidebar').classList.remove('collapsed')}</script>
 
     <!-- ===== Main Content ===== -->
     <div class="main-content">
@@ -182,7 +183,6 @@
 
     <script src="script.js"></script>
     <script>
-if (window.innerWidth <= 1024) { document.getElementById('sidebar').classList.add('collapsed'); }
 function navigateWithProgress(url) {
     var overlay = document.getElementById('loadingOverlay');
     var track = document.getElementById('loadingTrack');

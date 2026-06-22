@@ -21,9 +21,17 @@
 .stat-value { font-size: 22px; }
 
 /* Table enhancements */
+.table-wrap {
+    overflow-x: auto;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+}
 .table-wrap table th {
     font-size: 11px;
     padding: 10px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 .table-wrap table td {
     font-size: 12px;
