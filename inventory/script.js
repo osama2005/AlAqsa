@@ -611,6 +611,48 @@ function makeSearchableSelect(sel) {
     if (sel.value) { const o = sel.options[sel.selectedIndex]; if (o) input.value = o.text; }
 }
 
+function showCodeSearch(selectId) {
+    const items = inventory;
+    if (!items.length) { showToast('لا توجد أصناف في المخزون'); return; }
+    openModal('بحث عن صنف', `
+        <div>
+            <input type="text" id="codeSearchQuery" class="ss-input" placeholder="ابحث بكود أو اسم الصنف..." autocomplete="off" style="width:100%;margin-bottom:12px">
+            <div style="max-height:360px;overflow-y:auto">
+                <table class="data-table" style="width:100%">
+                    <thead><tr><th>الكود</th><th>الاسم</th><th>الوحدة</th><th>التصنيف</th><th></th></tr></thead>
+                    <tbody id="codeSearchTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    `);
+    function render(q) {
+        const query = (q || '').trim().toLowerCase();
+        const filtered = items.filter(i => !query || i.code.toLowerCase().includes(query) || (i.name || '').toLowerCase().includes(query));
+        document.getElementById('codeSearchTbody').innerHTML = filtered.map(i =>
+            `<tr class="code-search-row" onclick="pickSearchCode('${esc(i.code)}','${selectId}')">
+                <td>${esc(i.code)}</td>
+                <td>${esc(i.name)}</td>
+                <td>${esc(i.unit || '')}</td>
+                <td>${esc(i.category || '')}</td>
+                <td><i class="fas fa-check" style="color:#10b981"></i></td>
+            </tr>`
+        ).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">لا توجد نتائج</td></tr>';
+    }
+    setTimeout(() => {
+        const input = document.getElementById('codeSearchQuery');
+        if (input) {
+            input.addEventListener('input', () => render(input.value));
+            render('');
+            input.focus();
+        }
+    }, 50);
+}
+function pickSearchCode(code, selectId) {
+    const sel = document.getElementById(selectId);
+    if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
+    closeModal();
+}
+
 // ---- Recalc ----
 function recalcInventoryTotals(code) {
     const item = inventory.find(i => i.code === code);
@@ -1233,9 +1275,10 @@ function showAddIncomingModal() {
             </div>
             <div class="form-group">
                 <label>كود الصنف</label>
+                <div class="code-field">
                 <select id="incoming_code" onchange="selectIncomingItem()" data-searchable="true">
                     ${emptyMsg}${opts}
-                </select>
+                </select><button class="search-code-btn" onclick="showCodeSearch('incoming_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div>
             </div>
             <div class="form-group full balance-hint" id="incoming_balance"></div>
             <div class="form-group">
@@ -1333,7 +1376,7 @@ function editIncoming(index) {
         <div class="form-grid">
             <div class="form-group"><label>اليوم</label><input type="text" id="incoming_day" value="${esc(rec.day)}"></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="incoming_date" value="${esc(rec.date)}"></div>
-            <div class="form-group"><label>كود الصنف</label><select id="incoming_code" onchange="selectIncomingItem()" data-searchable="true">${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="incoming_code" onchange="selectIncomingItem()" data-searchable="true">${opts}</select><button class="search-code-btn" onclick="showCodeSearch('incoming_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="incoming_ministry_code" value="${esc(rec.ministryCode)}"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="incoming_name" value="${esc(rec.name)}"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="incoming_unit" value="${esc(rec.unit)}"></div>
@@ -1422,7 +1465,7 @@ function showAddOutgoingModal() {
         <div class="form-grid">
             <div class="form-group"><label>اليوم</label><select id="outgoing_day"><option value="">اختر اليوم</option><option>الأحد</option><option>الإثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option><option>السبت</option></select></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" placeholder="اكتب التاريخ"></div>
-            <div class="form-group"><label>كود الصنف</label><select id="outgoing_code" onchange="selectOutgoingItem()" data-searchable="true">${emptyMsg}${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="outgoing_code" onchange="selectOutgoingItem()" data-searchable="true">${emptyMsg}${opts}</select><button class="search-code-btn" onclick="showCodeSearch('outgoing_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group full balance-hint" id="outgoing_balance"></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="outgoing_ministry_code"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="outgoing_name"></div>
@@ -1493,7 +1536,7 @@ function editOutgoing(index) {
                 `<option ${d === rec.day ? 'selected' : ''}>${esc(d)}</option>`
             ).join('')}</select></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" value="${esc(rec.date)}"></div>
-            <div class="form-group"><label>كود الصنف</label><select id="outgoing_code" onchange="selectOutgoingItem()" data-searchable="true">${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="outgoing_code" onchange="selectOutgoingItem()" data-searchable="true">${opts}</select><button class="search-code-btn" onclick="showCodeSearch('outgoing_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="outgoing_ministry_code" value="${esc(rec.ministryCode)}"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="outgoing_name" value="${esc(rec.name)}"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="outgoing_unit" value="${esc(rec.unit)}"></div>
@@ -1574,7 +1617,7 @@ function showAddLoanModal() {
     const emptyMsg = inventory.length === 0 ? '<option value="" disabled>لا توجد أصناف - أضف أصنافاً أولاً</option>' : '<option value="">اختر صنفاً</option>';
     openModal('إضافة إعارة جديدة', `
         <div class="form-grid">
-            <div class="form-group"><label>كود الصنف</label><select id="loan_code" onchange="selectLoanItem()" data-searchable="true">${emptyMsg}${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="loan_code" onchange="selectLoanItem()" data-searchable="true">${emptyMsg}${opts}</select><button class="search-code-btn" onclick="showCodeSearch('loan_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name"></div>
             <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit"></div>
@@ -1672,7 +1715,7 @@ function showAddLoanIncomingModal() {
         <div class="form-grid">
             <div class="form-group"><label>اليوم</label><input type="text" id="loan_incoming_day" value="${today()}"></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="loan_incoming_date" value="${dateStr()}"></div>
-            <div class="form-group"><label>كود الصنف</label><select id="loan_incoming_code" onchange="selectLoanIncomingItem()" data-searchable="true">${emptyMsg}${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="loan_incoming_code" onchange="selectLoanIncomingItem()" data-searchable="true">${emptyMsg}${opts}</select><button class="search-code-btn" onclick="showCodeSearch('loan_incoming_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group full balance-hint" id="loan_incoming_balance"></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_incoming_name"></div>
             <div class="form-group"><label>الكمية</label><input type="number" id="loan_incoming_qty" value="0" min="0" oninput="calcLoanIncomingTotal()"></div>
@@ -1737,7 +1780,7 @@ function editLoanIncoming(index) {
         <div class="form-grid">
             <div class="form-group"><label>اليوم</label><input type="text" id="loan_incoming_day" value="${esc(rec.day)}"></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="loan_incoming_date" value="${esc(rec.date)}"></div>
-            <div class="form-group"><label>كود الصنف</label><select id="loan_incoming_code" onchange="selectLoanIncomingItem()" data-searchable="true">${opts}</select></div>
+            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="loan_incoming_code" onchange="selectLoanIncomingItem()" data-searchable="true">${opts}</select><button class="search-code-btn" onclick="showCodeSearch('loan_incoming_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_incoming_name" value="${esc(rec.name)}"></div>
             <div class="form-group"><label>الكمية</label><input type="number" id="loan_incoming_qty" value="${rec.qty}" min="0" oninput="calcLoanIncomingTotal()"></div>
             <div class="form-group"><label>الجهة</label><select id="loan_incoming_source">${(['','مخازن وزارة الصحة','خزانة الأمريكي','تبرعات','منظمة الصحة العالمية','أونروا','الهلال الأحمر','أخرى']).map(c =>

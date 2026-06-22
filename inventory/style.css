@@ -231,3 +231,19 @@ body.dark .cp-widget { background: rgba(0,0,0,0.2); }
 body.dark .cp-field-group { border-color: var(--border); background: var(--bg-card); }
 body.dark .cp-hero-selector select { background: var(--bg-card); border-color: var(--border); }
 body.dark .cp-hero-tabs { background: rgba(0,0,0,0.15); }
+
+/* Code search button */
+.code-field { display: flex; gap: 4px; align-items: flex-start; }
+.code-field select, .code-field .ss-container { flex: 1; }
+.search-code-btn {
+    flex-shrink: 0; width: 36px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; color: var(--text-sec);
+    font-size: 14px; transition: all 0.2s;
+}
+.search-code-btn:hover { border-color: #10b981; color: #10b981; background: rgba(16,185,129,0.05); }
+/* Code search modal rows */
+.code-search-row { cursor: pointer; transition: background 0.15s; }
+.code-search-row:hover { background: rgba(16,185,129,0.08); }
+.code-search-row td:last-child { text-align: center; }
