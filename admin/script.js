@@ -313,4 +313,79 @@ function adminTab(name) {
     if (link) link.classList.add('active');
     const section = document.getElementById(`tab-${name}`);
     if (section) section.classList.add('active');
+    if (name === 'lists') renderLists();
 }
+
+// ---- List Management ----
+const LIST_DEFS = [
+    { key:'inv_units',       label:'الوحدات',        icon:'fa-ruler-combined', seed:['قطعة','حبة','كرتونة','صندوق','زوج','لتر','كيلو','متر','طقم','علبة','بكرة','رول'] },
+    { key:'inv_categories',  label:'التصنيفات',      icon:'fa-tags',          seed:['أجهزة طبية','كهربائية','أقمشة','أثاث','مستلزمات طبية','أدوية','مواد تنظيف','قرطاسية','أخرى'] },
+    { key:'inv_types',       label:'الأنواع',         icon:'fa-layer-group',   seed:['مستهلك','مستديم'] },
+    { key:'inv_sources',     label:'جهات الوارد',     icon:'fa-arrow-down',    seed:['مخازن وزارة الصحة','خزانة الأمريكي','تبرعات','منظمة الصحة العالمية','أونروا','الهلال الأحمر','أخرى'] },
+    { key:'inv_destinations',label:'جهات الصادر',     icon:'fa-arrow-up',      seed:['أقسام المستشفى','مخازن وزارة الصحة','تبرعات','هيئة','محافظة','أخرى'] },
+];
+
+function getList(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+function saveList(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
+
+function seedLists() {
+    LIST_DEFS.forEach(d => {
+        if (!localStorage.getItem(d.key)) saveList(d.key, d.seed);
+    });
+}
+
+function addListItem(key) {
+    const input = document.getElementById(`li_input_${key}`);
+    const val = input ? input.value.trim() : '';
+    if (!val) { showToast('يرجى إدخال قيمة'); return; }
+    let items = getList(key);
+    if (items.includes(val)) { showToast('القيمة موجودة مسبقاً'); return; }
+    items.push(val);
+    items.sort();
+    saveList(key, items);
+    if (input) input.value = '';
+    renderLists();
+}
+
+function deleteListItem(key, index) {
+    if (!confirm('هل أنت متأكد من حذف هذه القيمة؟')) return;
+    let items = getList(key);
+    items.splice(index, 1);
+    saveList(key, items);
+    renderLists();
+}
+
+function renameListItem(key, index) {
+    let items = getList(key);
+    const oldVal = items[index];
+    const newVal = prompt('أدخل القيمة الجديدة:', oldVal);
+    if (!newVal || !newVal.trim() || newVal.trim() === oldVal) return;
+    if (items.includes(newVal.trim())) { showToast('القيمة موجودة مسبقاً'); return; }
+    items[index] = newVal.trim();
+    saveList(key, items);
+    renderLists();
+}
+
+function renderLists() {
+    const body = document.getElementById('listsBody');
+    body.innerHTML = LIST_DEFS.map(d => {
+        const items = getList(d.key);
+        return `
+        <div class="list-manager">
+            <div class="list-header"><i class="fas ${d.icon}"></i> ${d.label} <span class="list-count">${items.length}</span></div>
+            <div class="list-items" id="li_items_${d.key}">
+                ${items.length ? items.map((v, i) => `
+                    <span class="list-tag">
+                        <span class="list-tag-text" ondblclick="renameListItem('${d.key}',${i})" title="انقر مرتين للتعديل">${esc(v)}</span>
+                        <button class="list-tag-del" onclick="deleteListItem('${d.key}',${i})" title="حذف">&times;</button>
+                    </span>`).join('') : '<span class="list-empty">لا توجد قيم</span>'}
+            </div>
+            <div class="list-add">
+                <input type="text" id="li_input_${d.key}" placeholder="إضافة قيمة جديدة..." onkeydown="if(event.key==='Enter')addListItem('${d.key}')">
+                <button class="btn-list-add" onclick="addListItem('${d.key}')"><i class="fas fa-plus"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+seedLists();

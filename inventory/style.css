@@ -355,3 +355,41 @@ body.dark .table-toolbar select { background: var(--bg-card); border-color: var(
 .code-search-row { cursor: pointer; transition: background 0.15s; }
 .code-search-row:hover { background: rgba(52, 103, 57,0.08); }
 .code-search-row td:last-child { text-align: center; }
+
+/* ===== Reports Page ===== */
+.report-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+@media (max-width: 768px) {
+    .report-grid { grid-template-columns: 1fr; }
+}
+.report-grid h4 {
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rpt-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rpt-bar-wrap span {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 40px;
+}
+.rpt-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--primary);
+    transition: width 0.4s ease;
+    min-width: 4px;
+}
+#rptStats .stat-card { cursor: default; }
+#rptStats .stat-card:hover { transform: translateY(-2px); }
+#rptStats .stat-icon { font-size: 20px; margin-bottom: 6px; }

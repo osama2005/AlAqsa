@@ -33,6 +33,9 @@
             <a class="tab" data-tab="users" onclick="adminTab('users')">
                 <span class="lg-icon"><i class="fas fa-users-gear"></i></span> <span>المستخدمون</span>
             </a>
+            <a class="tab" data-tab="lists" onclick="adminTab('lists')">
+                <span class="lg-icon"><i class="fas fa-list-ul"></i></span> <span>القوائم</span>
+            </a>
             <a onclick="navigateWithProgress('../inventory/index.html')" style="cursor:pointer">
                 <span class="lg-icon"><i class="fas fa-boxes-stacked"></i></span> <span>الذهاب إلى المخزون</span>
             </a>
@@ -130,6 +133,14 @@
                             المستخدم صاحب دور <strong>admin</strong> لا يمكن حذفه.
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- == القوائم == -->
+            <section id="tab-lists" class="tab-content">
+                <div class="card">
+                    <div class="card-header"><h2><i class="fas fa-list-ul"></i> إدارة القوائم المنسدلة</h2></div>
+                    <div class="card-body" id="listsBody"></div>
                 </div>
             </section>
         </div>

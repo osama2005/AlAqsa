@@ -42,8 +42,8 @@ function getNextLoanCode() {
 // ---- Color Customization System ----
 const COLORS = ['', '#ffcdd2','#f8bbd0','#e1bee7','#bbdefb','#b3e5fc','#b2dfdb','#c8e6c9','#fff9c4','#ffe0b2','#ffccbc','#d7ccc8','#f5f5f5'];
 
-const SECT_KEYS = { inventory:['code','ministryCode','name','unit','category','type','openingBalance','totalIn','totalOut','remaining','price','notes','report'], incoming:['day','date','code','ministryCode','name','unit','category','type','qty','source','price','total','notes','report'], outgoing:['day','date','code','ministryCode','name','unit','category','type','qty','destination','price','total','notes','report'], loan:['code','ministryCode','name','unit','category','openingBalance','totalIn','totalOut','remaining','report'], loanIncoming:['day','date','code','name','qty','source','price','total','report'], kahana:['name','category','details','notes','report'] };
-const SECT_DISPLAY = { inventory:['كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','رصيد أول','الوارد','الصادر','المتبقي','السعر','ملاحظات','التقارير'], incoming:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات','التقارير'], outgoing:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات','التقارير'], loan:['كود','كود وزارة','الاسم','الوحدة','التصنيف','رصيد أول','الوارد','الصادر','المتبقي','التقارير'], loanIncoming:['اليوم','التاريخ','كود','الاسم','الكمية','الجهة','السعر','الإجمالي','التقارير'], kahana:['الاسم','التصنيف','التفاصيل','ملاحظات','التقارير'] };
+const SECT_KEYS = { inventory:['code','ministryCode','name','unit','category','type','openingBalance','totalIn','totalOut','remaining','price','notes'], incoming:['day','date','code','ministryCode','name','unit','category','type','qty','source','price','total','notes'], outgoing:['day','date','code','ministryCode','name','unit','category','type','qty','destination','price','total','notes'], loan:['code','ministryCode','name','unit','category','openingBalance','totalIn','totalOut','remaining'], loanIncoming:['day','date','code','name','qty','source','price','total'], kahana:['name','category','details','notes'] };
+const SECT_DISPLAY = { inventory:['كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','رصيد أول','الوارد','الصادر','المتبقي','السعر','ملاحظات'], incoming:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], outgoing:['اليوم','التاريخ','كود الصنف','كود وزارة','اسم الصنف','الوحدة','التصنيف','النوع','الكمية','الجهة','السعر','الإجمالي','ملاحظات'], loan:['كود','كود وزارة','الاسم','الوحدة','التصنيف','رصيد أول','الوارد','الصادر','المتبقي'], loanIncoming:['اليوم','التاريخ','كود','الاسم','الكمية','الجهة','السعر','الإجمالي'], kahana:['الاسم','التصنيف','التفاصيل','ملاحظات'] };
 
 let colColors = safeParse('_colColors', {});
 
@@ -432,30 +432,10 @@ function fieldSelectHtml(key, id, selected, placeholder) {
         items = [selected, ...items];
         saveFieldList(key, items);
     }
-    return `<div class="unit-field-wrap">
-        <select id="${id}">
+    return `<select id="${id}">
             <option value="">${placeholder}</option>
             ${items.map(v => `<option ${v === selected ? 'selected' : ''}>${esc(v)}</option>`).join('')}
-        </select>
-        <button type="button" class="btn-add-unit" onclick="addFieldItem('${key}', '${id}', '${placeholder}')" title="إضافة جديد">+</button>
-    </div>`;
-}
-
-function addFieldItem(key, selectId, placeholder) {
-    const name = prompt('أدخل القيمة الجديدة:');
-    if (!name || !name.trim()) return;
-    const trimmed = name.trim();
-    let items = getFieldList(key);
-    if (items.includes(trimmed)) { showToast('القيمة موجودة مسبقاً'); return; }
-    items.push(trimmed);
-    items.sort();
-    saveFieldList(key, items);
-    const sel = document.getElementById(selectId);
-    if (sel) {
-        sel.innerHTML = '<option value="">' + placeholder + '</option>' +
-            items.map(v => `<option ${v === trimmed ? 'selected' : ''}>${esc(v)}</option>`).join('');
-        sel.value = trimmed;
-    }
+        </select>`;
 }
 
 // Seed units from existing data
@@ -478,14 +458,18 @@ if (!safeParse('inv_types', null)) {
     inventory.forEach(i => { if (i.type) s.add(i.type); });
     localStorage.setItem('inv_types', JSON.stringify(Array.from(s).sort()));
 }
+// Seed sources & destinations
+if (!safeParse('inv_sources', null)) {
+    localStorage.setItem('inv_sources', JSON.stringify(['مخازن وزارة الصحة','خزانة الأمريكي','تبرعات','منظمة الصحة العالمية','أونروا','الهلال الأحمر','أخرى']));
+}
+if (!safeParse('inv_destinations', null)) {
+    localStorage.setItem('inv_destinations', JSON.stringify(['أقسام المستشفى','مخازن وزارة الصحة','تبرعات','هيئة','محافظة','أخرى']));
+}
 
 // Convenience wrappers
 function unitFieldHtml(id, selected) { return fieldSelectHtml('inv_units', id, selected, 'اختر الوحدة'); }
 function categoryFieldHtml(id, selected) { return fieldSelectHtml('inv_categories', id, selected, 'اختر التصنيف'); }
 function typeFieldHtml(id, selected) { return fieldSelectHtml('inv_types', id, selected, 'اختر النوع'); }
-function addNewUnit(selectId) { addFieldItem('inv_units', selectId, 'اختر الوحدة'); }
-function addNewCategory(selectId) { addFieldItem('inv_categories', selectId, 'اختر التصنيف'); }
-function addNewType(selectId) { addFieldItem('inv_types', selectId, 'اختر النوع'); }
 
 // ---- Audio ----
 function playSound(type) {
@@ -726,7 +710,6 @@ function renderInventory() {
             <td ${tdStyle(item,'inventory',c[9])}>${remaining}</td>
             <td ${tdStyle(item,'inventory',c[10])}>${item.price || 0}</td>
             <td ${tdStyle(item,'inventory',c[11])}>${esc(item.notes || '')}</td>
-            <td ${tdStyle(item,'inventory',c[12])}>${esc(item.report || '')}</td>
             <td>${canEdit ? `
                 ${getColorBtn(item, 'inventory', i)}
                 <button class="action-btn edit-btn" onclick="editInventory(${i})"><i class="fas fa-pen"></i></button>
@@ -754,7 +737,6 @@ function renderIncoming() {
         <td ${tdStyle(rec,'incoming',c[10])}>${rec.price}</td>
         <td ${tdStyle(rec,'incoming',c[11])}>${rec.total}</td>
         <td ${tdStyle(rec,'incoming',c[12])}>${esc(rec.notes || '')}</td>
-        <td ${tdStyle(rec,'incoming',c[13])}>${esc(rec.report || '')}</td>
         <td>${canEdit ? `
             ${getColorBtn(rec, 'incoming', i)}
             <button class="action-btn edit-btn" onclick="editIncoming(${i})"><i class="fas fa-pen"></i></button>
@@ -781,7 +763,6 @@ function renderOutgoing() {
         <td ${tdStyle(rec,'outgoing',c[10])}>${rec.price}</td>
         <td ${tdStyle(rec,'outgoing',c[11])}>${rec.total}</td>
         <td ${tdStyle(rec,'outgoing',c[12])}>${esc(rec.notes || '')}</td>
-        <td ${tdStyle(rec,'outgoing',c[13])}>${esc(rec.report || '')}</td>
         <td>${canEdit ? `
             ${getColorBtn(rec, 'outgoing', i)}
             <button class="action-btn edit-btn" onclick="editOutgoing(${i})"><i class="fas fa-pen"></i></button>
@@ -805,7 +786,6 @@ function renderLoan() {
             <td ${tdStyle(item,'loan',c[6])}>${item.totalIn || 0}</td>
             <td ${tdStyle(item,'loan',c[7])}>${item.totalOut || 0}</td>
             <td ${tdStyle(item,'loan',c[8])}>${remaining}</td>
-            <td ${tdStyle(item,'loan',c[9])}>${esc(item.report || '')}</td>
             <td>${canEdit ? `
                 ${getColorBtn(item, 'loan', i)}
                 <button class="action-btn edit-btn" onclick="editLoan(${i})"><i class="fas fa-pen"></i></button>
@@ -834,7 +814,6 @@ function renderLoanInventory() {
             <td ${tdStyle(item,'inventory',c[9])}>${remaining}</td>
             <td ${tdStyle(item,'inventory',c[10])}>${item.price || 0}</td>
             <td ${tdStyle(item,'inventory',c[11])}>${esc(item.notes || '')}</td>
-            <td ${tdStyle(item,'inventory',c[12])}>${esc(item.report || '')}</td>
         </tr>`;
     }).join('');
 }
@@ -852,7 +831,6 @@ function renderLoanIncoming() {
         <td ${tdStyle(rec,'loanIncoming',c[5])}>${esc(rec.source)}</td>
         <td ${tdStyle(rec,'loanIncoming',c[6])}>${rec.price}</td>
         <td ${tdStyle(rec,'loanIncoming',c[7])}>${rec.total}</td>
-        <td ${tdStyle(rec,'loanIncoming',c[8])}>${esc(rec.report || '')}</td>
         <td>${canEdit ? `
             ${getColorBtn(rec, 'loanIncoming', i)}
             <button class="action-btn edit-btn" onclick="editLoanIncoming(${i})"><i class="fas fa-pen"></i></button>
@@ -871,13 +849,75 @@ function renderKahana() {
         <td ${tdStyle(item,'kahana',c[1])}>${esc(item.category || '')}</td>
         <td ${tdStyle(item,'kahana',c[2])}>${esc(item.details || '')}</td>
         <td ${tdStyle(item,'kahana',c[3])}>${esc(item.notes || '')}</td>
-        <td ${tdStyle(item,'kahana',c[4])}>${esc(item.report || '')}</td>
         <td>${canEdit ? `
             ${getColorBtn(item, 'kahana', i)}
             <button class="action-btn edit-btn" onclick="editKahana(${i})"><i class="fas fa-pen"></i></button>
             <button class="action-btn delete-btn" onclick="deleteKahana(${i})"><i class="fas fa-trash-can"></i></button>` : ''}
         </td>
     </tr>`}).join('');
+}
+
+// ---- Reports & Statistics ----
+function renderReports() {
+    const lowItems = inventory.filter(i => (i.openingBalance||0)+(i.totalIn||0)-(i.totalOut||0) <= 5);
+    const catCounts = {};
+    inventory.forEach(i => { const c = i.category||'بدون تصنيف'; catCounts[c] = (catCounts[c]||0)+1; });
+    const catEntries = Object.entries(catCounts).sort((a,b) => b[1]-a[1]);
+    const typeM = inventory.filter(i => i.type === 'مستهلك').length;
+    const typeN = inventory.filter(i => i.type !== 'مستهلك').length;
+    const recentIn = [...incoming].reverse().slice(0,5);
+    const recentOut = [...outgoing].reverse().slice(0,5);
+
+    document.getElementById('rptStats').innerHTML = `
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-cubes" style="color:var(--primary)"></i></div><div class="stat-value">${inventory.length}</div><div class="stat-label">إجمالي الأصناف</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-arrow-down" style="color:#2563eb"></i></div><div class="stat-value">${incoming.length}</div><div class="stat-label">وارد</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-arrow-up" style="color:#dc2626"></i></div><div class="stat-value">${outgoing.length}</div><div class="stat-label">صادر</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-hand-holding-box" style="color:#8b5cf6"></i></div><div class="stat-value">${loanItems.length}</div><div class="stat-label">إعارة</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation-triangle" style="color:#f59e0b"></i></div><div class="stat-value">${lowItems.length}</div><div class="stat-label">مخزون منخفض</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-people-group" style="color:#64748b"></i></div><div class="stat-value">${kahana.length}</div><div class="stat-label">راكد</div></div>`;
+
+    document.getElementById('rptCategories').innerHTML = catEntries.length ? `
+        <div class="table-wrap"><table><thead><tr><th>التصنيف</th><th>العدد</th><th>النسبة</th></tr></thead><tbody>
+        ${catEntries.map(([cat,count]) => `<tr><td>${esc(cat)}</td><td>${count}</td><td><div class="rpt-bar-wrap"><div class="rpt-bar" style="width:${(count/inventory.length*100).toFixed(1)}%"></div><span>${(count/inventory.length*100).toFixed(1)}%</span></div></td></tr>`).join('')}
+        </tbody></table></div>` : '<p style="text-align:center;color:var(--text-muted);padding:24px">لا توجد أصناف في المخزون</p>';
+
+    document.getElementById('rptAnalysis').innerHTML = `
+        <div class="report-grid">
+            <div><h4 style="margin-bottom:12px;color:var(--text-secondary)"><i class="fas fa-layer-group"></i> حسب النوع</h4>
+                <div class="table-wrap"><table><thead><tr><th>النوع</th><th>العدد</th><th>النسبة</th></tr></thead><tbody>
+                    <tr><td>مستهلك</td><td>${typeM}</td><td><div class="rpt-bar-wrap"><div class="rpt-bar" style="width:${inventory.length?((typeM/inventory.length)*100).toFixed(1):0}%;background:#3b82f6"></div><span>${inventory.length?((typeM/inventory.length)*100).toFixed(1):0}%</span></div></td></tr>
+                    <tr><td>غير مستهلك</td><td>${typeN}</td><td><div class="rpt-bar-wrap"><div class="rpt-bar" style="width:${inventory.length?((typeN/inventory.length)*100).toFixed(1):0}%;background:#8b5cf6"></div><span>${inventory.length?((typeN/inventory.length)*100).toFixed(1):0}%</span></div></td></tr>
+                </tbody></table></div></div>
+            <div><h4 style="margin-bottom:12px;color:var(--text-secondary)"><i class="fas fa-exclamation-triangle"></i> تنبيه المخزون المنخفض (${lowItems.length})</h4>
+                ${lowItems.length ? `<div class="table-wrap"><table><thead><tr><th>الكود</th><th>الاسم</th><th>المتبقي</th></tr></thead><tbody>
+                ${lowItems.slice(0,10).map(i => `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td style="color:${(i.openingBalance||0)+(i.totalIn||0)-(i.totalOut||0)<=0?'#dc2626':'#f59e0b'};font-weight:700">${(i.openingBalance||0)+(i.totalIn||0)-(i.totalOut||0)}</td></tr>`).join('')}
+                </tbody></table></div>` : '<p style="color:var(--text-muted);text-align:center;padding:12px">جميع الأصناف بمستوى آمن</p>'}
+            </div>
+        </div>`;
+
+    document.getElementById('rptActivity').innerHTML = `
+        <div class="report-grid">
+            <div><h4 style="margin-bottom:12px;color:var(--text-secondary)"><i class="fas fa-arrow-down" style="color:#2563eb"></i> آخر الوارد</h4>
+                ${recentIn.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الكود</th><th>الاسم</th><th>الكمية</th><th>الجهة</th></tr></thead><tbody>
+                ${recentIn.map(r => `<tr><td>${esc(r.date)}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${r.qty}</td><td>${esc(r.source)}</td></tr>`).join('')}
+                </tbody></table></div>` : '<p style="color:var(--text-muted);text-align:center;padding:12px">لا توجد عمليات وارد</p>'}
+            </div>
+            <div><h4 style="margin-bottom:12px;color:var(--text-secondary)"><i class="fas fa-arrow-up" style="color:#dc2626"></i> آخر الصادر</h4>
+                ${recentOut.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الكود</th><th>الاسم</th><th>الكمية</th><th>الجهة</th></tr></thead><tbody>
+                ${recentOut.map(r => `<tr><td>${esc(r.date)}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${r.qty}</td><td>${esc(r.destination)}</td></tr>`).join('')}
+                </tbody></table></div>` : '<p style="color:var(--text-muted);text-align:center;padding:12px">لا توجد عمليات صادر</p>'}
+            </div>
+        </div>`;
+
+    document.getElementById('rptExport').innerHTML = `
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="exportExcel('inventory')"><i class="fas fa-file-excel"></i> تصدير المخزون</button>
+            <button class="btn btn-primary" onclick="exportExcel('incoming')"><i class="fas fa-file-excel"></i> تصدير الوارد</button>
+            <button class="btn btn-primary" onclick="exportExcel('outgoing')"><i class="fas fa-file-excel"></i> تصدير الصادر</button>
+            <button class="btn btn-primary" onclick="exportExcel('loan')"><i class="fas fa-file-excel"></i> تصدير الإعارة</button>
+            <button class="btn btn-primary" onclick="exportExcel('loanIncoming')"><i class="fas fa-file-excel"></i> تصدير وارد الإعارة</button>
+            <button class="btn btn-primary" onclick="exportExcel('kahana')"><i class="fas fa-file-excel"></i> تصدير الراكد</button>
+        </div>`;
 }
 
 function updateStats() {
@@ -906,6 +946,7 @@ function renderAll() {
     renderLoanIncoming();
     renderLoanInventory();
     renderKahana();
+    renderReports();
     updateTabCounters();
     setupTableFilters();
 }
@@ -1034,8 +1075,7 @@ function exportExcel(section) {
             'الصادر': i.totalOut || 0,
             'الرصيد المتبقي': (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0),
             'السعر': i.price || 0,
-            'ملاحظات': i.notes || '',
-            'التقارير': i.report || ''
+            'ملاحظات': i.notes || ''
         }));
         name = 'المخزون';
     } else if (section === 'incoming') {
@@ -1044,7 +1084,7 @@ function exportExcel(section) {
             'كود وزارة': r.ministryCode, 'اسم الصنف': r.name, 'الوحدة': r.unit,
             'التصنيف': r.category, 'النوع': r.type, 'الكمية': r.qty,
             'الجهة الوارد منها': r.source, 'السعر': r.price, 'الإجمالي': r.total,
-            'ملاحظات': r.notes || '', 'التقارير': r.report || ''
+            'ملاحظات': r.notes || ''
         }));
         name = 'الوارد';
     } else if (section === 'outgoing') {
@@ -1053,7 +1093,7 @@ function exportExcel(section) {
             'كود وزارة': r.ministryCode, 'اسم الصنف': r.name, 'الوحدة': r.unit,
             'التصنيف': r.category, 'النوع': r.type, 'الكمية': r.qty,
             'الجهة المصروف لها': r.destination, 'السعر': r.price, 'الإجمالي': r.total,
-            'ملاحظات': r.notes || '', 'التقارير': r.report || ''
+            'ملاحظات': r.notes || ''
         }));
         name = 'الصادر';
     } else if (section === 'loan') {
@@ -1062,19 +1102,17 @@ function exportExcel(section) {
             'الوحدة': i.unit, 'التصنيف': i.category,
             'رصيد أول المدة': i.openingBalance || 0,
             'الوارد': i.totalIn || 0, 'الصادر': i.totalOut || 0,
-            'الرصيد المتبقي': (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0),
-            'التقارير': i.report || ''
+            'الرصيد المتبقي': (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0)
         }));
         name = 'الإعارة';
     } else if (section === 'kahana') {
-        data = kahana.map(i => ({ 'الاسم': i.name, 'التصنيف': i.category || '', 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '', 'التقارير': i.report || '' }));
+        data = kahana.map(i => ({ 'الاسم': i.name, 'التصنيف': i.category || '', 'التفاصيل': i.details || '', 'ملاحظات': i.notes || '' }));
         name = 'راكد';
     } else if (section === 'loanIncoming') {
         data = loanIncoming.map(r => ({
             'اليوم': r.day, 'التاريخ': r.date, 'كود': r.code,
             'الاسم': r.name, 'الكمية': r.qty, 'الجهة': r.source,
-            'السعر': r.price, 'الإجمالي': r.total,
-            'التقارير': r.report || ''
+            'السعر': r.price, 'الإجمالي': r.total
         }));
         name = 'وارد الإعارة';
     }
@@ -1169,8 +1207,7 @@ function importExcel(event, section) {
                         category: String(row['التصنيف'] || row['category'] || ''),
                         openingBalance: Number(row['رصيد أول المدة'] || row['openingBalance'] || 0),
                         totalIn: Number(row['الوارد'] || row['totalIn'] || 0),
-                        totalOut: Number(row['الصادر'] || row['totalOut'] || 0),
-                        report: String(row['التقارير'] || row['report'] || '')
+                        totalOut: Number(row['الصادر'] || row['totalOut'] || 0)
                     });
                     added++;
                 } else if (section === 'loanIncoming') {
@@ -1185,8 +1222,7 @@ function importExcel(event, section) {
                         qty: Number(row['الكمية'] || row['qty'] || 0),
                         source: String(row['الجهة'] || row['source'] || ''),
                         price: Number(row['السعر'] || row['price'] || 0),
-                        total: Number(row['الإجمالي'] || row['total'] || 0),
-                        report: String(row['التقارير'] || row['report'] || '')
+                        total: Number(row['الإجمالي'] || row['total'] || 0)
                     });
                     recalcLoanTotals(code);
                     added++;
@@ -1312,7 +1348,6 @@ function saveInventoryItem() {
         openingBalance: Number(document.getElementById('item_opening').value) || 0,
         price: Number(document.getElementById('item_price').value) || 0,
         notes: document.getElementById('item_notes').value.trim(),
-        report: document.getElementById('item_report').value.trim(),
         totalIn: Number(document.getElementById('item_totalIn').value) || 0,
         totalOut: Number(document.getElementById('item_totalOut').value) || 0,
         remaining: Number(document.getElementById('item_remaining').value) || 0
@@ -1375,10 +1410,6 @@ function editInventory(index) {
                 <label>ملاحظات</label>
                 <textarea id="item_notes">${esc(item.notes || '')}</textarea>
             </div>
-            <div class="form-group full">
-                <label>التقارير</label>
-                <textarea id="item_report">${esc(item.report || '')}</textarea>
-            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateInventory(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1401,7 +1432,6 @@ function updateInventory(index) {
     item.remaining = Number(document.getElementById('item_remaining').value) || 0;
     item.price = Number(document.getElementById('item_price').value) || 0;
     item.notes = document.getElementById('item_notes').value.trim();
-    item.report = document.getElementById('item_report').value.trim();
     save();
     renderAll();
     closeModal();
@@ -1497,10 +1527,6 @@ function showAddIncomingModal() {
                 <label>ملاحظات</label>
                 <textarea id="incoming_notes"></textarea>
             </div>
-            <div class="form-group full">
-                <label>التقارير</label>
-                <textarea id="incoming_report"></textarea>
-            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveIncoming()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1532,8 +1558,7 @@ function saveIncoming() {
         source: document.getElementById('incoming_source').value,
         price: Number(document.getElementById('incoming_price').value) || 0,
         total: qty * (Number(document.getElementById('incoming_price').value) || 0),
-        notes: document.getElementById('incoming_notes').value.trim(),
-        report: document.getElementById('incoming_report').value.trim()
+        notes: document.getElementById('incoming_notes').value.trim()
     };
     incoming.push(rec);
     recalcInventoryTotals(code);
@@ -1563,7 +1588,6 @@ function editIncoming(index) {
             <div class="form-group"><label>السعر</label><input type="number" id="incoming_price" value="${rec.price}" min="0" step="0.01" oninput="calcIncomingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="incoming_total" value="${rec.total}" readonly></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="incoming_notes">${esc(rec.notes || '')}</textarea></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="incoming_report">${esc(rec.report || '')}</textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateIncoming(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1591,8 +1615,7 @@ function updateIncoming(index) {
         qty: Number(document.getElementById('incoming_qty').value) || 0,
         source: document.getElementById('incoming_source').value,
         price: Number(document.getElementById('incoming_price').value) || 0,
-        notes: document.getElementById('incoming_notes').value.trim(),
-        report: document.getElementById('incoming_report').value.trim()
+        notes: document.getElementById('incoming_notes').value.trim()
     });
     rec.total = rec.qty * rec.price;
     recalcInventoryTotals(oldCode);
@@ -1653,7 +1676,6 @@ function showAddOutgoingModal() {
             <div class="form-group"><label>السعر</label><input type="number" id="outgoing_price" value="0" min="0" step="0.01" oninput="calcOutgoingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="outgoing_total" readonly></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="outgoing_notes"></textarea></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="outgoing_report"></textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveOutgoing()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1690,8 +1712,7 @@ function saveOutgoing() {
         destination: document.getElementById('outgoing_destination').value,
         price: Number(document.getElementById('outgoing_price').value) || 0,
         total: qty * (Number(document.getElementById('outgoing_price').value) || 0),
-        notes: document.getElementById('outgoing_notes').value.trim(),
-        report: document.getElementById('outgoing_report').value.trim()
+        notes: document.getElementById('outgoing_notes').value.trim()
     };
     outgoing.push(rec);
     recalcInventoryTotals(code);
@@ -1723,7 +1744,6 @@ function editOutgoing(index) {
             <div class="form-group"><label>السعر</label><input type="number" id="outgoing_price" value="${rec.price}" min="0" step="0.01" oninput="calcOutgoingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="outgoing_total" value="${rec.total}" readonly></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="outgoing_notes">${esc(rec.notes || '')}</textarea></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="outgoing_report">${esc(rec.report || '')}</textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateOutgoing(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1759,8 +1779,7 @@ function updateOutgoing(index) {
         qty: Number(document.getElementById('outgoing_qty').value) || 0,
         destination: document.getElementById('outgoing_destination').value,
         price: Number(document.getElementById('outgoing_price').value) || 0,
-        notes: document.getElementById('outgoing_notes').value.trim(),
-        report: document.getElementById('outgoing_report').value.trim()
+        notes: document.getElementById('outgoing_notes').value.trim()
     });
     rec.total = rec.qty * rec.price;
     recalcInventoryTotals(oldCode);
@@ -1822,10 +1841,6 @@ function showAddLoanModal() {
                 <label>رصيد أول المدة</label>
                 <input type="number" id="loan_opening" value="0" min="0">
             </div>
-            <div class="form-group full">
-                <label>التقارير</label>
-                <textarea id="loan_report"></textarea>
-            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveLoan()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1845,8 +1860,7 @@ function saveLoan() {
         name, unit: document.getElementById('loan_unit').value,
         category: document.getElementById('loan_category').value,
         openingBalance: Number(document.getElementById('loan_opening').value) || 0,
-        totalIn: 0, totalOut: 0,
-        report: document.getElementById('loan_report').value.trim()
+        totalIn: 0, totalOut: 0
     });
     save();
     renderAll();
@@ -1882,10 +1896,6 @@ function editLoan(index) {
                 <label>رصيد أول المدة</label>
                 <input type="number" id="loan_opening" value="${item.openingBalance}" min="0">
             </div>
-            <div class="form-group full">
-                <label>التقارير</label>
-                <textarea id="loan_report">${esc(item.report || '')}</textarea>
-            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateLoan(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1907,8 +1917,7 @@ function updateLoan(index) {
         name: document.getElementById('loan_name').value.trim(),
         unit: document.getElementById('loan_unit').value,
         category: document.getElementById('loan_category').value,
-        openingBalance: Number(document.getElementById('loan_opening').value) || 0,
-        report: document.getElementById('loan_report').value.trim()
+        openingBalance: Number(document.getElementById('loan_opening').value) || 0
     });
     if (newCode !== oldCode) {
         const name = item.name;
@@ -1954,13 +1963,10 @@ function showAddLoanIncomingModal() {
             <div class="form-group"><label>الكمية</label><input type="number" id="loan_incoming_qty" value="0" min="0" oninput="calcLoanIncomingTotal()"></div>
             <div class="form-group"><label>الجهة</label><select id="loan_incoming_source">
                 <option value="">اختر الجهة</option>
-                <option>مخازن وزارة الصحة</option><option>خزانة الأمريكي</option>
-                <option>تبرعات</option><option>منظمة الصحة العالمية</option>
-                <option>أونروا</option><option>الهلال الأحمر</option><option>أخرى</option>
+                ${safeParse('inv_sources',[]).map(v => `<option>${esc(v)}</option>`).join('')}
             </select></div>
             <div class="form-group"><label>السعر</label><input type="number" id="loan_incoming_price" value="0" min="0" step="0.01" oninput="calcLoanIncomingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="loan_incoming_total" readonly></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="loan_incoming_report"></textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveLoanIncoming()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1994,8 +2000,7 @@ function saveLoanIncoming() {
         name: document.getElementById('loan_incoming_name').value, qty,
         source: document.getElementById('loan_incoming_source').value,
         price: Number(document.getElementById('loan_incoming_price').value) || 0,
-        total: qty * (Number(document.getElementById('loan_incoming_price').value) || 0),
-        report: document.getElementById('loan_incoming_report').value.trim()
+        total: qty * (Number(document.getElementById('loan_incoming_price').value) || 0)
     });
     recalcLoanTotals(code);
     save();
@@ -2016,12 +2021,11 @@ function editLoanIncoming(index) {
             <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="loan_incoming_code" onchange="selectLoanIncomingItem()" data-searchable="true">${opts}</select><button class="search-code-btn" onclick="showCodeSearch('loan_incoming_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
             <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_incoming_name" value="${esc(rec.name)}"></div>
             <div class="form-group"><label>الكمية</label><input type="number" id="loan_incoming_qty" value="${rec.qty}" min="0" oninput="calcLoanIncomingTotal()"></div>
-            <div class="form-group"><label>الجهة</label><select id="loan_incoming_source">${(['','مخازن وزارة الصحة','خزانة الأمريكي','تبرعات','منظمة الصحة العالمية','أونروا','الهلال الأحمر','أخرى']).map(c =>
+            <div class="form-group"><label>الجهة</label><select id="loan_incoming_source">${(['',...safeParse('inv_sources',[])]).map(c =>
                 `<option ${c === rec.source ? 'selected' : ''}>${esc(c)}</option>`
             ).join('')}</select></div>
             <div class="form-group"><label>السعر</label><input type="number" id="loan_incoming_price" value="${rec.price}" min="0" step="0.01" oninput="calcLoanIncomingTotal()"></div>
             <div class="form-group"><label>الإجمالي</label><input type="text" id="loan_incoming_total" value="${rec.total}" readonly></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="loan_incoming_report">${esc(rec.report || '')}</textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateLoanIncoming(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -2044,8 +2048,7 @@ function updateLoanIncoming(index) {
         name: document.getElementById('loan_incoming_name').value,
         qty: Number(document.getElementById('loan_incoming_qty').value) || 0,
         source: document.getElementById('loan_incoming_source').value,
-        price: Number(document.getElementById('loan_incoming_price').value) || 0,
-        report: document.getElementById('loan_incoming_report').value.trim()
+        price: Number(document.getElementById('loan_incoming_price').value) || 0
     });
     rec.total = rec.qty * rec.price;
     recalcLoanTotals(oldCode);
@@ -2184,7 +2187,7 @@ function toggleSidebar() {
 
 // ---- 3D Tilt Effect for all buttons ----
 function initTilt() {
-  const SEL = '.btn, .btn-action, .action-btn, .save-btn, .cancel-btn, .sub-tab, .tab, .topbar-btn, .theme-toggle-btn, .navbar-btn, .mobile-menu-btn, .btn-add-unit, .search-code-btn, .modal .close-btn, .login-btn, .cp-hero-tab, .cp-actions button';
+  const SEL = '.btn, .btn-action, .action-btn, .save-btn, .cancel-btn, .sub-tab, .tab, .topbar-btn, .theme-toggle-btn, .navbar-btn, .mobile-menu-btn, .search-code-btn, .modal .close-btn, .login-btn, .cp-hero-tab, .cp-actions button';
   const MAX = 10;
   if (!window.matchMedia('(hover: hover)').matches) return;
 
