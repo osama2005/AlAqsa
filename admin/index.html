@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#142918">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2310b981'/%3E%3Cpath d='M14 6h4v8h8v4h-8v8h-4v-8H6v-4h8z' fill='%23fff'/%3E%3C/svg%3E">
     <title>لوحة التحكم - مستشفى شهداء الأقصى</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -30,15 +31,15 @@
                 <i class="fas fa-gauge-high"></i> <span>لوحة التحكم</span>
             </a>
             <a class="tab" data-tab="users" onclick="adminTab('users')">
-                <i class="fas fa-users-gear"></i> <span>المستخدمون</span>
+                <span class="lg-icon"><i class="fas fa-users-gear"></i></span> <span>المستخدمون</span>
             </a>
             <a onclick="navigateWithProgress('../inventory/index.html')" style="cursor:pointer">
-                <i class="fas fa-boxes-stacked"></i> <span>الذهاب إلى المخزون</span>
+                <span class="lg-icon"><i class="fas fa-boxes-stacked"></i></span> <span>الذهاب إلى المخزون</span>
             </a>
         </nav>
         <div class="sidebar-footer">
-            <a onclick="logout()"><i class="fas fa-right-from-bracket"></i> <span>تسجيل الخروج</span></a>
-            <a onclick="toggleSidebar()" class="sidebar-toggle"><i class="fas fa-chevron-right"></i> <span>طي القائمة</span></a>
+            <a onclick="logout()"><span class="lg-icon"><i class="fas fa-right-from-bracket"></i></span> <span>تسجيل الخروج</span></a>
+            <a onclick="toggleSidebar()" class="sidebar-toggle"><span class="lg-icon"><i class="fas fa-chevron-right"></i></span> <span>طي القائمة</span></a>
         </div>
     </aside>
     <script>if (window.innerWidth > 1024){document.getElementById('sidebar').classList.remove('collapsed')}</script>
@@ -55,25 +56,7 @@
             <div class="topbar-left">
                 <div id="liveClock" class="topbar-clock"></div>
                 <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="الوضع الليلي">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <defs>
-                            <mask id="ttMaskAdm">
-                                <rect width="24" height="24" fill="white"/>
-                                <circle class="tt-mask-c" cx="12" cy="12" r="9" fill="black"/>
-                            </mask>
-                        </defs>
-                        <g class="tt-rays">
-                            <line x1="12" y1="1" x2="12" y2="4"/>
-                            <line x1="12" y1="20" x2="12" y2="23"/>
-                            <line x1="1" y1="12" x2="4" y2="12"/>
-                            <line x1="20" y1="12" x2="23" y2="12"/>
-                            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
-                            <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
-                            <line x1="6.34" y1="17.66" x2="4.22" y2="19.78"/>
-                            <line x1="19.78" y1="19.78" x2="17.66" y2="17.66"/>
-                        </g>
-                        <circle class="tt-body" cx="12" cy="12" r="9" fill="currentColor" stroke="none" mask="url(#ttMaskAdm)"/>
-                    </svg>
+                    <span class="tt-handle"><i class="fas fa-sun"></i></span>
                 </button>
             </div>
         </header>
@@ -100,7 +83,7 @@
                         <div class="stat-label">المستخدمين</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-circle" style="color:#10b981"></i></div>
+                        <div class="stat-icon"><i class="fas fa-circle" style="color:#346739"></i></div>
                         <div class="stat-value" id="statActive">0</div>
                         <div class="stat-label">نشط الآن</div>
                     </div>
@@ -110,7 +93,7 @@
                 <div class="card">
                     <div class="card-body" style="padding:16px 20px">
                         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                            <i class="fas fa-circle" style="color:#10b981;font-size:10px"></i>
+                            <i class="fas fa-circle" style="color:#346739;font-size:10px"></i>
                             <span style="font-weight:600;font-size:14px">المستخدمون النشطون حالياً</span>
                         </div>
                         <div id="activeUsersList" style="display:flex;flex-wrap:wrap;gap:8px">جاري التحميل...</div>
@@ -169,13 +152,21 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <!-- ===== Loading Overlay ===== -->
+    <!-- ===== Loading Overlay (Progressive Flux) ===== -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-box">
-            <div class="loading-icon"><i class="fas fa-cubes"></i></div>
-            <div class="loading-title">جاري التحميل...</div>
-            <div class="progress-8bit">
-                <div class="progress-8bit-track" id="loadingTrack"></div>
+            <div class="flux-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="flux-phases">
+                <span class="flux-phase" data-pct="0">جاري التجهيز</span>
+                <span class="flux-phase" data-pct="35">جاري التحميل</span>
+                <span class="flux-phase" data-pct="70">جاري المعالجة</span>
+                <span class="flux-phase" data-pct="100">اكتمل</span>
+            </div>
+            <div class="flux-track">
+                <div class="flux-fill" id="loadingTrack"></div>
+                <div class="flux-glow"></div>
             </div>
             <div class="loading-percent" id="loadingPercent">0%</div>
         </div>
@@ -188,26 +179,23 @@ function navigateWithProgress(url) {
     var track = document.getElementById('loadingTrack');
     var pct = document.getElementById('loadingPercent');
     overlay.classList.add('active');
-    var blocks = [];
-    for (var i = 0; i < 20; i++) {
-        var b = document.createElement('div');
-        b.className = 'progress-8bit-block';
-        track.appendChild(b);
-        blocks.push(b);
-    }
-    var idx = 0;
-    var total = 20;
+    var phases = overlay.querySelectorAll('.flux-phase');
+    var p = 0;
     var interval = setInterval(function() {
-        if (idx < total) {
-            blocks[idx].classList.add('filled');
-            idx++;
-            pct.textContent = Math.round((idx / total) * 100) + '%';
+        if (p < 100) {
+            p += 5;
+            track.style.width = p + '%';
+            pct.textContent = p + '%';
+            phases.forEach(function(ph) {
+                var at = parseInt(ph.getAttribute('data-pct'));
+                ph.classList.toggle('active', p >= at);
+            });
         }
-        if (idx >= total) {
+        if (p >= 100) {
             clearInterval(interval);
-            setTimeout(function() { window.location.href = url; }, 200);
+            setTimeout(function() { window.location.href = url; }, 300);
         }
-    }, 75);
+    }, 80);
 }
     </script>
 </body>

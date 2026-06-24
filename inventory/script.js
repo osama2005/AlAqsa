@@ -33,6 +33,11 @@ function showToast(msg, type) {
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2,5);
 }
+function getNextLoanCode() {
+    let c = Number(localStorage.getItem('inv_loan_counter') || '0') + 1;
+    localStorage.setItem('inv_loan_counter', String(c));
+    return 'L-' + String(c).padStart(3, '0');
+}
 
 // ---- Color Customization System ----
 const COLORS = ['', '#ffcdd2','#f8bbd0','#e1bee7','#bbdefb','#b3e5fc','#b2dfdb','#c8e6c9','#fff9c4','#ffe0b2','#ffccbc','#d7ccc8','#f5f5f5'];
@@ -214,10 +219,13 @@ function heroCpSection(id, label, content) {
 
 /* ── HeroUI Color Picker Widget ── */
 function heroCpWidget(id, label) {
+    const isTx = id.endsWith('-tx');
+    const defHex = isTx ? '000000' : '10B981';
+    const defSwatch = isTx ? '#000000' : '#346739';
     return `
     <div class="cp-widget" id="cpw-${id}" data-cp-id="${id}">
         <div class="cp-widget-header">
-            <span class="swatch-preview" id="cpw-${id}-swatch" style="background:#10b981"></span>
+            <span class="swatch-preview" id="cpw-${id}-swatch" style="background:${defSwatch}"></span>
             <span>${label}</span>
         </div>
         <div class="cp-area-wrap">
@@ -232,10 +240,10 @@ function heroCpWidget(id, label) {
         </div>
         <div class="cp-field-group">
             <span class="cp-field-prefix">#</span>
-            <input class="cp-field-input" id="cpw-${id}-hex" value="10B981" maxlength="6" spellcheck="false" oninput="heroHexInput('${id}')">
+            <input class="cp-field-input" id="cpw-${id}-hex" value="${defHex}" maxlength="6" spellcheck="false" oninput="heroHexInput('${id}')">
         </div>
         <div class="cp-swatches" id="cpw-${id}-swatches">
-            ${['#ef4444','#f97316','#eab308','#22c55e','#10b981','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#78716c','#000000','#ffffff'].map(c =>
+            ${['#ef4444','#f97316','#eab308','#22c55e','#346739','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#78716c','#000000','#ffffff'].map(c =>
                 `<button class="cp-swatch" style="background:${c}" data-color="${c}" onclick="heroPickSwatch('${id}','${c}')"></button>`
             ).join('')}
         </div>
@@ -518,16 +526,21 @@ function toggleTheme() {
     const isDark = document.body.classList.toggle('dark');
     document.getElementById('themeBtn').classList.toggle('dark', isDark);
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
+    const h = document.querySelector('#themeBtn .tt-handle i');
+    if (h) h.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
     const overlay = document.getElementById('themeOverlay');
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
 }
 
 (function loadTheme() {
-    if (localStorage.getItem('inv_theme') === 'dark') {
+    const isDark = localStorage.getItem('inv_theme') === 'dark';
+    if (isDark) {
         document.body.classList.add('dark');
         const btn = document.getElementById('themeBtn');
         if (btn) btn.classList.add('dark');
     }
+    const h = document.querySelector('#themeBtn .tt-handle i');
+    if (h) h.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
 })();
 
 // ---- Logout ----
@@ -580,6 +593,11 @@ function makeSearchableSelect(sel) {
     input.placeholder = 'ابحث بكود أو اسم الصنف...';
     input.autocomplete = 'off';
     container.appendChild(input);
+    const trigger = document.createElement('button');
+    trigger.type = 'button'; trigger.className = 'ss-trigger';
+    trigger.innerHTML = '<i class="fas fa-chevron-down"></i>';
+    trigger.tabIndex = -1;
+    container.appendChild(trigger);
     const dropdown = document.createElement('div');
     dropdown.className = 'ss-dropdown';
     container.appendChild(dropdown);
@@ -590,30 +608,49 @@ function makeSearchableSelect(sel) {
         const q = v.trim().toLowerCase();
         const items = getItems();
         const matches = !q ? items : items.filter(i => i.value.toLowerCase().includes(q) || i.text.toLowerCase().includes(q));
+        const curVal = sel.value;
         if (!matches.length) {
             dropdown.innerHTML = '<div class="ss-empty">لا توجد نتائج</div>';
         } else {
-            dropdown.innerHTML = matches.map(i => `<div class="ss-option" data-v="${i.value}">${esc(i.text)}</div>`).join('');
+            dropdown.innerHTML = matches.map(i =>
+                `<div class="ss-option${i.value === curVal ? ' selected' : ''}" data-v="${i.value}">
+                    <span>${esc(i.text)}</span>
+                    <span class="ss-check"><i class="fas fa-check"></i></span>
+                </div>`
+            ).join('');
         }
         dropdown.classList.add('open');
+        trigger.classList.add('open');
+    }
+    function closeDrop() {
+        dropdown.classList.remove('open');
+        trigger.classList.remove('open');
     }
     input.addEventListener('input', () => render(input.value));
     input.addEventListener('focus', () => render(input.value));
+    trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        if (dropdown.classList.contains('open')) { closeDrop(); }
+        else { render(input.value); }
+    });
     dropdown.addEventListener('click', e => {
         const opt = e.target.closest('.ss-option');
         if (!opt) return;
         sel.value = opt.dataset.v;
         input.value = opt.textContent;
-        dropdown.classList.remove('open');
+        closeDrop();
         sel.dispatchEvent(new Event('change'));
     });
-    document.addEventListener('click', e => { if (!container.contains(e.target)) dropdown.classList.remove('open'); }, { passive: true });
-    if (sel.value) { const o = sel.options[sel.selectedIndex]; if (o) input.value = o.text; }
+    document.addEventListener('click', e => { if (!container.contains(e.target)) closeDrop(); }, { passive: true });
+    if (sel.value) {
+        const o = sel.options[sel.selectedIndex];
+        if (o) input.value = o.text;
+    }
 }
 
 function showCodeSearch(selectId) {
-    const items = inventory;
-    if (!items.length) { showToast('لا توجد أصناف في المخزون'); return; }
+    const items = selectId === 'loan_incoming_code' || selectId === 'loan_code' ? loanItems : inventory;
+    if (!items.length) { showToast('لا توجد نتائج'); return; }
     openModal('بحث عن صنف', `
         <div>
             <input type="text" id="codeSearchQuery" class="ss-input" placeholder="ابحث بكود أو اسم الصنف..." autocomplete="off" style="width:100%;margin-bottom:12px">
@@ -634,7 +671,7 @@ function showCodeSearch(selectId) {
                 <td>${esc(i.name)}</td>
                 <td>${esc(i.unit || '')}</td>
                 <td>${esc(i.category || '')}</td>
-                <td><i class="fas fa-check" style="color:#10b981"></i></td>
+                <td><i class="fas fa-check" style="color:#346739"></i></td>
             </tr>`
         ).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">لا توجد نتائج</td></tr>';
     }
@@ -778,6 +815,30 @@ function renderLoan() {
     }).join('');
 }
 
+function renderLoanInventory() {
+    const tbody = document.getElementById('loanInventoryBody');
+    if (!tbody) return;
+    const c = SECT_KEYS.inventory;
+    tbody.innerHTML = inventory.map((item, i) => {
+        const remaining = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
+        return `<tr ${rowStyle(item)}>
+            <td ${tdStyle(item,'inventory',c[0])}>${esc(item.code)}</td>
+            <td ${tdStyle(item,'inventory',c[1])}>${esc(item.ministryCode)}</td>
+            <td ${tdStyle(item,'inventory',c[2])}>${esc(item.name)}</td>
+            <td ${tdStyle(item,'inventory',c[3])}>${esc(item.unit)}</td>
+            <td ${tdStyle(item,'inventory',c[4])}>${esc(item.category)}</td>
+            <td ${tdStyle(item,'inventory',c[5])}>${esc(item.type)}</td>
+            <td ${tdStyle(item,'inventory',c[6])}>${item.openingBalance || 0}</td>
+            <td ${tdStyle(item,'inventory',c[7])}>${item.totalIn || 0}</td>
+            <td ${tdStyle(item,'inventory',c[8])}>${item.totalOut || 0}</td>
+            <td ${tdStyle(item,'inventory',c[9])}>${remaining}</td>
+            <td ${tdStyle(item,'inventory',c[10])}>${item.price || 0}</td>
+            <td ${tdStyle(item,'inventory',c[11])}>${esc(item.notes || '')}</td>
+            <td ${tdStyle(item,'inventory',c[12])}>${esc(item.report || '')}</td>
+        </tr>`;
+    }).join('');
+}
+
 function renderLoanIncoming() {
     const tbody = document.getElementById('loanIncomingBody');
     const c = SECT_KEYS.loanIncoming;
@@ -825,10 +886,12 @@ function updateStats() {
     const statOutgoing = document.getElementById('statOutgoing');
     const statLoan = document.getElementById('statLoan');
     const statLowStock = document.getElementById('statLowStock');
+    const totalBadge = document.getElementById('totalBadge');
     if (statItems) statItems.textContent = inventory.length;
     if (statIncoming) statIncoming.textContent = incoming.length;
     if (statOutgoing) statOutgoing.textContent = outgoing.length;
     if (statLoan) statLoan.textContent = loanItems.length;
+    if (totalBadge) totalBadge.innerHTML = `<i class="fas fa-cube"></i> ${inventory.length} مخزون`;
     if (statLowStock) {
         const low = inventory.filter(i => (i.openingBalance || 0) + (i.totalIn || 0) - (i.totalOut || 0) <= 5).length;
         statLowStock.textContent = low;
@@ -841,9 +904,117 @@ function renderAll() {
     renderOutgoing();
     renderLoan();
     renderLoanIncoming();
+    renderLoanInventory();
     renderKahana();
     updateTabCounters();
-    updateStats();
+    setupTableFilters();
+}
+
+function setupTableFilters() {
+    document.querySelectorAll('.table-wrap').forEach(wrap => {
+        const tbody = wrap.querySelector('tbody');
+        if (!tbody || wrap.dataset.filterReady) return;
+        wrap.dataset.filterReady = '1';
+        const table = wrap.querySelector('table');
+        const toolbar = document.createElement('div');
+        toolbar.className = 'table-toolbar';
+        toolbar.innerHTML = `
+            <input type="text" class="search-input" placeholder="🔍 بحث في الجدول..." autocomplete="off">
+            <select class="filter-cat"><option value="">كل التصنيفات</option></select>
+            <div class="col-picker-btn">
+                <button class="col-toggle"><i class="fas fa-table-cells"></i> الأعمدة <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
+                <div class="col-picker-dropdown"></div>
+            </div>
+        `;
+        wrap.parentNode.insertBefore(toolbar, wrap);
+        const searchInput = toolbar.querySelector('.search-input');
+        const filterCat = toolbar.querySelector('.filter-cat');
+        const colBtn = toolbar.querySelector('.col-picker-btn');
+        const colToggle = toolbar.querySelector('.col-toggle');
+        const colDropdown = toolbar.querySelector('.col-picker-dropdown');
+        const catIdx = (() => {
+            if (!table) return -1;
+            const ths = table.querySelectorAll('th');
+            for (let i = 0; i < ths.length; i++) {
+                if (ths[i].textContent.includes('تصنيف')) return i;
+            }
+            return -1;
+        })();
+        const allCats = new Set();
+        tbody.querySelectorAll('tr').forEach(tr => {
+            if (catIdx >= 0 && tr.children[catIdx]) {
+                const v = tr.children[catIdx].textContent.trim();
+                if (v) allCats.add(v);
+            }
+        });
+        allCats.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c; o.textContent = c;
+            filterCat.appendChild(o);
+        });
+        // ---- Column visibility toggler ----
+        const ths = table ? table.querySelectorAll('th') : [];
+        const colState = [];
+        const alwaysIdx = new Set();
+        const def = ['', 'العمليات', 'خيارات', 'الإجراءات'];
+        ths.forEach((th, i) => {
+            const label = th.textContent.trim();
+            if (def.some(d => label.includes(d))) alwaysIdx.add(i);
+            colState.push(true);
+        });
+        function renderColDropdown() {
+            colDropdown.innerHTML = '';
+            ths.forEach((th, i) => {
+                const label = th.textContent.trim();
+                if (!label) return;
+                const item = document.createElement('label');
+                item.className = 'col-picker-item' + (alwaysIdx.has(i) ? ' disabled' : '');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = colState[i];
+                cb.disabled = alwaysIdx.has(i);
+                cb.addEventListener('change', () => {
+                    colState[i] = cb.checked;
+                    applyColVisibility();
+                });
+                item.appendChild(cb);
+                item.appendChild(document.createTextNode(label));
+                colDropdown.appendChild(item);
+            });
+        }
+        function applyColVisibility() {
+            ths.forEach((th, i) => {
+                const visible = colState[i];
+                th.classList.toggle('col-hidden', !visible);
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    if (tr.children[i]) tr.children[i].classList.toggle('col-hidden', !visible);
+                });
+            });
+            const hidden = colState.filter(v => !v).length;
+            colToggle.classList.toggle('active', hidden > 0);
+        }
+        colToggle.addEventListener('click', e => {
+            e.stopPropagation();
+            colDropdown.classList.toggle('open');
+            renderColDropdown();
+        });
+        document.addEventListener('click', e => {
+            if (!colBtn.contains(e.target)) colDropdown.classList.remove('open');
+        });
+        // ---- Row filter ----
+        function doFilter() {
+            const q = searchInput.value.trim().toLowerCase();
+            const cat = filterCat.value;
+            Array.from(tbody.children).forEach(tr => {
+                if (tr.classList.contains('table-empty')) return;
+                const txt = tr.textContent.toLowerCase();
+                const match = (!q || txt.includes(q)) && (!cat || (catIdx >= 0 && tr.children[catIdx] && tr.children[catIdx].textContent.trim() === cat));
+                tr.style.display = match ? '' : 'none';
+            });
+        }
+        searchInput.addEventListener('input', doFilter);
+        filterCat.addEventListener('change', doFilter);
+    });
 }
 
 // ---- Export Excel ----
@@ -996,7 +1167,10 @@ function importExcel(event, section) {
                         code, ministryCode: String(row['كود وزارة'] || row['ministryCode'] || ''),
                         name, unit: String(row['الوحدة'] || row['unit'] || ''),
                         category: String(row['التصنيف'] || row['category'] || ''),
-                        openingBalance: Number(row['رصيد أول المدة'] || row['openingBalance'] || 0)
+                        openingBalance: Number(row['رصيد أول المدة'] || row['openingBalance'] || 0),
+                        totalIn: Number(row['الوارد'] || row['totalIn'] || 0),
+                        totalOut: Number(row['الصادر'] || row['totalOut'] || 0),
+                        report: String(row['التقارير'] || row['report'] || '')
                     });
                     added++;
                 } else if (section === 'loanIncoming') {
@@ -1011,7 +1185,8 @@ function importExcel(event, section) {
                         qty: Number(row['الكمية'] || row['qty'] || 0),
                         source: String(row['الجهة'] || row['source'] || ''),
                         price: Number(row['السعر'] || row['price'] || 0),
-                        total: Number(row['الإجمالي'] || row['total'] || 0)
+                        total: Number(row['الإجمالي'] || row['total'] || 0),
+                        report: String(row['التقارير'] || row['report'] || '')
                     });
                     recalcLoanTotals(code);
                     added++;
@@ -1019,10 +1194,11 @@ function importExcel(event, section) {
                     const name = String(row['الاسم'] || row['name'] || '').trim();
                     if (!name) return;
                     kahana.push({
-                        name,
+                        id: generateId(), name,
                         category: String(row['التصنيف'] || row['category'] || ''),
                         details: String(row['التفاصيل'] || row['details'] || ''),
-                        notes: String(row['ملاحظات'] || row['notes'] || '')
+                        notes: String(row['ملاحظات'] || row['notes'] || ''),
+                        report: String(row['التقارير'] || row['report'] || '')
                     });
                     added++;
                 }
@@ -1532,8 +1708,8 @@ function editOutgoing(index) {
     ).join('');
     openModal('تعديل صادر', `
         <div class="form-grid">
-            <div class="form-group"><label>اليوم</label><select id="outgoing_day">${(['','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']).map(d =>
-                `<option ${d === rec.day ? 'selected' : ''}>${esc(d)}</option>`
+            <div class="form-group"><label>اليوم</label><select id="outgoing_day">${(['اختر اليوم','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']).map((d,i) =>
+                i===0 ? `<option value="" ${'' === rec.day ? 'selected' : ''}>${esc(d)}</option>` : `<option ${d === rec.day ? 'selected' : ''}>${esc(d)}</option>`
             ).join('')}</select></div>
             <div class="form-group"><label>التاريخ</label><input type="text" id="outgoing_date" value="${esc(rec.date)}"></div>
             <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="outgoing_code" onchange="selectOutgoingItem()" data-searchable="true">${opts}</select><button class="search-code-btn" onclick="showCodeSearch('outgoing_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
@@ -1563,6 +1739,14 @@ function updateOutgoing(index) {
     const oldCode = rec.code;
     const newCode = document.getElementById('outgoing_code').value.trim();
     if (!newCode || !inventory.some(i => i.code === newCode)) { showToast('يرجى اختيار كود صنف صحيح'); return; }
+    const qty = Number(document.getElementById('outgoing_qty').value) || 0;
+    if (qty <= 0) { showToast('الكمية يجب أن تكون أكبر من صفر'); return; }
+    const item = inventory.find(i => i.code === newCode);
+    if (item) {
+        const oldQty = rec.qty || 0;
+        const rem = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0) + oldQty;
+        if (qty > rem) { showToast(`الرصيد المتبقي غير كافٍ! المتاح: ${rem}`); return; }
+    }
     Object.assign(rec, {
         day: document.getElementById('outgoing_day').value,
         date: document.getElementById('outgoing_date').value,
@@ -1601,7 +1785,7 @@ function deleteOutgoing(index) {
 // =============================================
 function selectLoanItem() {
     const code = document.getElementById('loan_code').value;
-    const item = inventory.find(i => i.code === code);
+    const item = loanItems.find(i => i.code === code);
     if (item) {
         document.getElementById('loan_ministry_code').value = item.ministryCode || '';
         document.getElementById('loan_name').value = item.name || '';
@@ -1611,19 +1795,37 @@ function selectLoanItem() {
 }
 
 function showAddLoanModal() {
-    const opts = inventory.map(i =>
-        `<option value="${esc(i.code)}">${esc(i.code)} - ${esc(i.name)} (${esc(i.type)})</option>`
-    ).join('');
-    const emptyMsg = inventory.length === 0 ? '<option value="" disabled>لا توجد أصناف - أضف أصنافاً أولاً</option>' : '<option value="">اختر صنفاً</option>';
+    const nextCode = getNextLoanCode();
     openModal('إضافة إعارة جديدة', `
         <div class="form-grid">
-            <div class="form-group"><label>كود الصنف</label><div class="code-field"><select id="loan_code" onchange="selectLoanItem()" data-searchable="true">${emptyMsg}${opts}</select><button class="search-code-btn" onclick="showCodeSearch('loan_code')" type="button" title="بحث عن صنف"><i class="fas fa-search"></i></button></div></div>
-            <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code"></div>
-            <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name"></div>
-            <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit"></div>
-            <div class="form-group"><label>التصنيف</label>${categoryFieldHtml('loan_category', '')}</div>
-            <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="0" min="0"></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="loan_report"></textarea></div>
+            <div class="form-group">
+                <label>كود الإعارة</label>
+                <input type="text" id="loan_code" value="${nextCode}">
+            </div>
+            <div class="form-group">
+                <label>كود وزارة</label>
+                <input type="text" id="loan_ministry_code" placeholder="كود وزارة الصحة">
+            </div>
+            <div class="form-group full">
+                <label>اسم الصنف</label>
+                <input type="text" id="loan_name" placeholder="اسم الصنف">
+            </div>
+            <div class="form-group">
+                <label>الوحدة</label>
+                ${unitFieldHtml('loan_unit', '')}
+            </div>
+            <div class="form-group">
+                <label>التصنيف</label>
+                ${categoryFieldHtml('loan_category', '')}
+            </div>
+            <div class="form-group">
+                <label>رصيد أول المدة</label>
+                <input type="number" id="loan_opening" value="0" min="0">
+            </div>
+            <div class="form-group full">
+                <label>التقارير</label>
+                <textarea id="loan_report"></textarea>
+            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveLoan()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1634,12 +1836,13 @@ function showAddLoanModal() {
 
 function saveLoan() {
     const code = document.getElementById('loan_code').value.trim();
-    if (!code) { showToast('يرجى اختيار كود الصنف'); return; }
-    if (loanItems.some(i => i.code === code)) { showToast('هذا الصنف موجود مسبقاً في الإعارة'); return; }
+    if (!code) { showToast('يرجى إدخال كود الإعارة'); return; }
+    if (loanItems.some(i => i.code === code)) { showToast('هذا الكود موجود مسبقاً في الإعارة'); return; }
+    const name = document.getElementById('loan_name').value.trim();
+    if (!name) { showToast('يرجى إدخال اسم الصنف'); return; }
     loanItems.push({
         code, ministryCode: document.getElementById('loan_ministry_code').value,
-        name: document.getElementById('loan_name').value,
-        unit: document.getElementById('loan_unit').value,
+        name, unit: document.getElementById('loan_unit').value,
         category: document.getElementById('loan_category').value,
         openingBalance: Number(document.getElementById('loan_opening').value) || 0,
         totalIn: 0, totalOut: 0,
@@ -1655,13 +1858,34 @@ function editLoan(index) {
     if (!item) return;
     openModal('تعديل إعارة', `
         <div class="form-grid">
-            <div class="form-group"><label>كود الصنف</label><input type="text" value="${esc(item.code)}" readonly></div>
-            <div class="form-group"><label>كود وزارة</label><input type="text" id="loan_ministry_code" value="${esc(item.ministryCode)}"></div>
-            <div class="form-group full"><label>اسم الصنف</label><input type="text" id="loan_name" value="${esc(item.name)}"></div>
-            <div class="form-group"><label>الوحدة</label><input type="text" id="loan_unit" value="${esc(item.unit)}"></div>
-            <div class="form-group"><label>التصنيف</label>${categoryFieldHtml('loan_category', item.category)}</div>
-            <div class="form-group"><label>رصيد أول المدة</label><input type="number" id="loan_opening" value="${item.openingBalance}" min="0"></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="loan_report">${esc(item.report || '')}</textarea></div>
+            <div class="form-group">
+                <label>كود الإعارة</label>
+                <input type="text" id="loan_code" value="${esc(item.code)}">
+            </div>
+            <div class="form-group">
+                <label>كود وزارة</label>
+                <input type="text" id="loan_ministry_code" value="${esc(item.ministryCode)}">
+            </div>
+            <div class="form-group full">
+                <label>اسم الصنف</label>
+                <input type="text" id="loan_name" value="${esc(item.name)}">
+            </div>
+            <div class="form-group">
+                <label>الوحدة</label>
+                ${unitFieldHtml('loan_unit', item.unit)}
+            </div>
+            <div class="form-group">
+                <label>التصنيف</label>
+                ${categoryFieldHtml('loan_category', item.category)}
+            </div>
+            <div class="form-group">
+                <label>رصيد أول المدة</label>
+                <input type="number" id="loan_opening" value="${item.openingBalance}" min="0">
+            </div>
+            <div class="form-group full">
+                <label>التقارير</label>
+                <textarea id="loan_report">${esc(item.report || '')}</textarea>
+            </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateLoan(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -1673,14 +1897,23 @@ function editLoan(index) {
 function updateLoan(index) {
     const item = loanItems[index];
     if (!item) return;
+    const oldCode = item.code;
+    const newCode = document.getElementById('loan_code').value.trim();
+    if (!newCode) { showToast('يرجى إدخال كود الإعارة'); return; }
+    if (newCode !== oldCode && loanItems.some(i => i.code === newCode)) { showToast('هذا الكود موجود مسبقاً'); return; }
     Object.assign(item, {
+        code: newCode,
         ministryCode: document.getElementById('loan_ministry_code').value,
-        name: document.getElementById('loan_name').value,
+        name: document.getElementById('loan_name').value.trim(),
         unit: document.getElementById('loan_unit').value,
         category: document.getElementById('loan_category').value,
         openingBalance: Number(document.getElementById('loan_opening').value) || 0,
         report: document.getElementById('loan_report').value.trim()
     });
+    if (newCode !== oldCode) {
+        const name = item.name;
+        loanIncoming.forEach(r => { if (r.code === oldCode) { r.code = newCode; r.name = name; } });
+    }
     save();
     renderAll();
     closeModal();
@@ -1949,8 +2182,47 @@ function toggleSidebar() {
     document.getElementById('sidebarOverlay').classList.toggle('active');
 }
 
+// ---- 3D Tilt Effect for all buttons ----
+function initTilt() {
+  const SEL = '.btn, .btn-action, .action-btn, .save-btn, .cancel-btn, .sub-tab, .tab, .topbar-btn, .theme-toggle-btn, .navbar-btn, .mobile-menu-btn, .btn-add-unit, .search-code-btn, .modal .close-btn, .login-btn, .cp-hero-tab, .cp-actions button';
+  const MAX = 10;
+  if (!window.matchMedia('(hover: hover)').matches) return;
+
+  let current = null;
+  function apply(el, cx, cy) {
+    const r = el.getBoundingClientRect();
+    const x = (cx - r.left) / r.width;
+    const y = (cy - r.top) / r.height;
+    el.style.transform = `perspective(600px) rotateX(${(y - 0.5) * 2 * MAX}deg) rotateY(${(x - 0.5) * 2 * -MAX}deg)`;
+  }
+  function reset(el) {
+    if (!el) return;
+    el.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    el.style.transform = '';
+    setTimeout(() => { if (el) el.style.transition = ''; }, 450);
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    const el = e.target.closest(SEL);
+    if (el) {
+      if (current && current !== el) reset(current);
+      current = el;
+      el.style.transition = 'none';
+      apply(el, e.clientX, e.clientY);
+    } else if (current) {
+      reset(current);
+      current = null;
+    }
+  }, { passive: true });
+
+  document.addEventListener('mouseleave', () => {
+    if (current) { reset(current); current = null; }
+  });
+}
+
 // ---- Initial render ----
 renderAll();
+initTilt();
 updateTabCounters();
 
 // Auto-switch tab from URL hash (e.g., #tab-incoming)

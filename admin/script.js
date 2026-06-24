@@ -70,16 +70,21 @@ function toggleTheme() {
     const isDark = document.body.classList.toggle('dark');
     document.getElementById('themeBtn').classList.toggle('dark', isDark);
     localStorage.setItem('inv_theme', isDark ? 'dark' : 'light');
+    const h = document.querySelector('#themeBtn .tt-handle i');
+    if (h) h.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
     const overlay = document.getElementById('themeOverlay');
     if (overlay) { overlay.classList.remove('active'); void overlay.offsetWidth; overlay.classList.add('active'); }
 }
 
 (function loadTheme() {
-    if (localStorage.getItem('inv_theme') === 'dark') {
+    const isDark = localStorage.getItem('inv_theme') === 'dark';
+    if (isDark) {
         document.body.classList.add('dark');
         const btn = document.getElementById('themeBtn');
         if (btn) btn.classList.add('dark');
     }
+    const h = document.querySelector('#themeBtn .tt-handle i');
+    if (h) h.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
 })();
 
 function goInventory() {

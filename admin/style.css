@@ -6,15 +6,15 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: rgba(16,185,129,0.08);
-    border: 1px solid rgba(16,185,129,0.15);
+    background: rgba(52, 103, 57,0.08);
+    border: 1px solid rgba(52, 103, 57,0.15);
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
 }
 .active-user-badge .dot {
     width: 8px; height: 8px;
-    background: #10b981;
+    background: var(--primary);
     border-radius: 50%;
     display: inline-block;
 }
@@ -50,7 +50,7 @@
     color: #2563eb;
 }
 .badge-yes {
-    color: #059669;
+    color: var(--primary-hover);
     font-weight: 500;
     font-size: 13px;
 }
