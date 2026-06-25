@@ -120,6 +120,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-cubes"></i> جدول الأرصدة</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_inventory" style="display:none"><span class="bulk-count" id="bulkCnt_inventory">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('inventory')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddItemModal()"><i class="fas fa-plus"></i> إضافة صنف</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('inventory')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -132,9 +133,10 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="inventory" onchange="toggleSelAll('inventory')"></th>
                                             <th>الكود</th><th>كود وزارة</th><th>اسم الصنف</th><th>الوحدة</th>
                                             <th>التصنيف</th><th>النوع</th><th>رصيد أول</th><th>وارد</th>
-                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
+                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="inventoryTableBody"></tbody>
@@ -150,6 +152,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-arrow-down" style="color:#3b82f6"></i> تسجيل البضائع المستلمة</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_incoming" style="display:none"><span class="bulk-count" id="bulkCnt_incoming">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('incoming')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddIncomingModal()"><i class="fas fa-plus"></i> وارد جديد</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('incoming')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -162,9 +165,10 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="incoming" onchange="toggleSelAll('incoming')"></th>
                                             <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
                                             <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="incomingTableBody"></tbody>
@@ -180,6 +184,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-arrow-up" style="color:#f59e0b"></i> تسجيل البضائع المصروفة</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_outgoing" style="display:none"><span class="bulk-count" id="bulkCnt_outgoing">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('outgoing')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddOutgoingModal()"><i class="fas fa-plus"></i> صادر جديد</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('outgoing')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -192,9 +197,10 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="outgoing" onchange="toggleSelAll('outgoing')"></th>
                                             <th>اليوم</th><th>التاريخ</th><th>كود الصنف</th><th>كود وزارة</th>
                                             <th>اسم الصنف</th><th>الوحدة</th><th>التصنيف</th><th>النوع</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>ملاحظات</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="outgoingTableBody"></tbody>
@@ -233,6 +239,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-hand-holding-box" style="color:#8b5cf6"></i> المعدات الطبية المعارة</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_loan" style="display:none"><span class="bulk-count" id="bulkCnt_loan">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('loan')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddLoanModal()"><i class="fas fa-plus"></i> إعارة جديدة</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('loan')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -245,8 +252,9 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="loan" onchange="toggleSelAll('loan')"></th>
                                             <th>كود</th><th>كود وزارة</th><th>الاسم</th><th>الوحدة</th>
-                                            <th>التصنيف</th><th>رصيد أول</th><th>وارد</th><th>صادر</th><th>المتبقي</th><th>التقارير</th><th>إجراءات</th>
+                                            <th>التصنيف</th><th>رصيد أول</th><th>وارد</th><th>صادر</th><th>المتبقي</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="loanTableBody"></tbody>
@@ -261,6 +269,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-circle-arrow-down" style="color:#8b5cf6"></i> سجل الإعارة الوارد</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_loanIncoming" style="display:none"><span class="bulk-count" id="bulkCnt_loanIncoming">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('loanIncoming')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddLoanIncomingModal()"><i class="fas fa-plus"></i> وارد إعارة</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('loanIncoming')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -273,8 +282,9 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="loanIncoming" onchange="toggleSelAll('loanIncoming')"></th>
                                             <th>اليوم</th><th>التاريخ</th><th>كود</th><th>الاسم</th>
-                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>التقارير</th><th>إجراءات</th>
+                                            <th>الكمية</th><th>الجهة</th><th>السعر</th><th>الإجمالي</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="loanIncomingBody"></tbody>
@@ -296,6 +306,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-cubes" style="color:#1a7a4c"></i> المخزون العام</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_loanInventory" style="display:none"><span class="bulk-count" id="bulkCnt_loanInventory">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('loanInventory')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action btn-green" onclick="exportExcel('inventory')"><i class="fas fa-file-export"></i> تصدير</button>
                             </div>
                         </div>
@@ -304,9 +315,10 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="loanInventory" onchange="toggleSelAll('loanInventory')"></th>
                                             <th>الكود</th><th>كود وزارة</th><th>اسم الصنف</th><th>الوحدة</th>
                                             <th>التصنيف</th><th>النوع</th><th>رصيد أول</th><th>وارد</th>
-                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th><th>التقارير</th>
+                                            <th>صادر</th><th>المتبقي</th><th>السعر</th><th>ملاحظات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="loanInventoryBody"></tbody>
@@ -336,6 +348,7 @@ if (window.location.hash) {
                         <div class="card-header">
                             <h2><i class="fas fa-people-group" style="color:#ec4899"></i> راكد</h2>
                             <div class="toolbar-actions">
+                                <span class="bulk-bar" id="bulkTbl_kahana" style="display:none"><span class="bulk-count" id="bulkCnt_kahana">0</span> <button class="btn-action btn-danger" onclick="deleteSelected('kahana')"><i class="fas fa-trash-can"></i> حذف</button></span>
                                 <button class="btn-action" onclick="showAddKahanaModal()"><i class="fas fa-plus"></i> إضافة</button>
                                 <button class="btn-action btn-purple" onclick="showColorsPanel()"><i class="fas fa-palette"></i> ألوان</button>
                                 <button class="btn-action btn-green" onclick="exportExcel('kahana')"><i class="fas fa-file-export"></i> تصدير</button>
@@ -348,7 +361,8 @@ if (window.location.hash) {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>الاسم</th><th>التصنيف</th><th>التفاصيل</th><th>ملاحظات</th><th>التقارير</th><th>إجراءات</th>
+                                            <th class="cb-col"><input type="checkbox" class="sel-all" data-tbl="kahana" onchange="toggleSelAll('kahana')"></th>
+                                            <th>الاسم</th><th>التصنيف</th><th>التفاصيل</th><th>ملاحظات</th><th>إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="kahanaTableBody"></tbody>

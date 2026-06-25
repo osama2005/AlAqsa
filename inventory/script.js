@@ -471,6 +471,40 @@ function unitFieldHtml(id, selected) { return fieldSelectHtml('inv_units', id, s
 function categoryFieldHtml(id, selected) { return fieldSelectHtml('inv_categories', id, selected, 'اختر التصنيف'); }
 function typeFieldHtml(id, selected) { return fieldSelectHtml('inv_types', id, selected, 'اختر النوع'); }
 
+// ---- Bulk Selection & Delete ----
+const TBL_DATA = { inventory:'inventory', incoming:'incoming', outgoing:'outgoing', loan:'loanItems', loanIncoming:'loanIncoming', loanInventory:'inventory', kahana:'kahana' };
+
+function toggleSelAll(tbl) {
+    const cb = document.querySelector(`.sel-all[data-tbl="${tbl}"]`);
+    const checked = cb.checked;
+    document.querySelectorAll(`.sel-row[data-tbl="${tbl}"]`).forEach(r => r.checked = checked);
+    updateBulkBar(tbl);
+}
+
+function updateBulkBar(tbl) {
+    const checked = document.querySelectorAll(`.sel-row[data-tbl="${tbl}"]:checked`).length;
+    const bar = document.getElementById(`bulkTbl_${tbl}`);
+    const cnt = document.getElementById(`bulkCnt_${tbl}`);
+    if (bar) {
+        bar.style.display = checked ? 'inline-flex' : 'none';
+        if (cnt) cnt.textContent = checked;
+    }
+}
+
+function deleteSelected(tbl) {
+    if (tbl === 'loanInventory') { showToast('عرض فقط - لا يمكن الحذف'); return; }
+    const checked = [...document.querySelectorAll(`.sel-row[data-tbl="${tbl}"]:checked`)];
+    if (!checked.length) { showToast('لم تختر أي صف'); return; }
+    if (!confirm(`هل أنت متأكد من حذف ${checked.length} صف؟`)) return;
+    const arr = window[TBL_DATA[tbl]];
+    const indices = checked.map(cb => parseInt(cb.dataset.idx)).sort((a,b) => b-a);
+    indices.forEach(idx => arr.splice(idx, 1));
+    saveAll();
+    renderAll();
+    updateBulkBar(tbl);
+    showToast(`تم حذف ${indices.length} صف`);
+}
+
 // ---- Audio ----
 function playSound(type) {
     try {
@@ -698,6 +732,7 @@ function renderInventory() {
     tbody.innerHTML = inventory.map((item, i) => {
         const remaining = item.remaining != null ? item.remaining : (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
         return `<tr ${rowStyle(item)}>
+            <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="inventory" data-idx="${i}" onchange="updateBulkBar('inventory')"></td>
             <td ${tdStyle(item,'inventory',c[0])}>${esc(item.code)}</td>
             <td ${tdStyle(item,'inventory',c[1])}>${esc(item.ministryCode)}</td>
             <td ${tdStyle(item,'inventory',c[2])}>${esc(item.name)}</td>
@@ -724,6 +759,7 @@ function renderIncoming() {
     const c = SECT_KEYS.incoming;
     tbody.innerHTML = incoming.map((rec, i) => {
         return `<tr ${rowStyle(rec)}>
+        <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="incoming" data-idx="${i}" onchange="updateBulkBar('incoming')"></td>
         <td ${tdStyle(rec,'incoming',c[0])}>${esc(rec.day)}</td>
         <td ${tdStyle(rec,'incoming',c[1])}>${esc(rec.date)}</td>
         <td ${tdStyle(rec,'incoming',c[2])}>${esc(rec.code)}</td>
@@ -750,6 +786,7 @@ function renderOutgoing() {
     const c = SECT_KEYS.outgoing;
     tbody.innerHTML = outgoing.map((rec, i) => {
         return `<tr ${rowStyle(rec)}>
+        <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="outgoing" data-idx="${i}" onchange="updateBulkBar('outgoing')"></td>
         <td ${tdStyle(rec,'outgoing',c[0])}>${esc(rec.day)}</td>
         <td ${tdStyle(rec,'outgoing',c[1])}>${esc(rec.date)}</td>
         <td ${tdStyle(rec,'outgoing',c[2])}>${esc(rec.code)}</td>
@@ -777,6 +814,7 @@ function renderLoan() {
     tbody.innerHTML = loanItems.map((item, i) => {
         const remaining = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
         return `<tr ${rowStyle(item)}>
+            <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="loan" data-idx="${i}" onchange="updateBulkBar('loan')"></td>
             <td ${tdStyle(item,'loan',c[0])}>${esc(item.code)}</td>
             <td ${tdStyle(item,'loan',c[1])}>${esc(item.ministryCode)}</td>
             <td ${tdStyle(item,'loan',c[2])}>${esc(item.name)}</td>
@@ -802,6 +840,7 @@ function renderLoanInventory() {
     tbody.innerHTML = inventory.map((item, i) => {
         const remaining = (item.openingBalance || 0) + (item.totalIn || 0) - (item.totalOut || 0);
         return `<tr ${rowStyle(item)}>
+            <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="loanInventory" data-idx="${i}" onchange="updateBulkBar('loanInventory')"></td>
             <td ${tdStyle(item,'inventory',c[0])}>${esc(item.code)}</td>
             <td ${tdStyle(item,'inventory',c[1])}>${esc(item.ministryCode)}</td>
             <td ${tdStyle(item,'inventory',c[2])}>${esc(item.name)}</td>
@@ -823,6 +862,7 @@ function renderLoanIncoming() {
     const c = SECT_KEYS.loanIncoming;
     tbody.innerHTML = loanIncoming.map((rec, i) => {
         return `<tr ${rowStyle(rec)}>
+        <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="loanIncoming" data-idx="${i}" onchange="updateBulkBar('loanIncoming')"></td>
         <td ${tdStyle(rec,'loanIncoming',c[0])}>${esc(rec.day)}</td>
         <td ${tdStyle(rec,'loanIncoming',c[1])}>${esc(rec.date)}</td>
         <td ${tdStyle(rec,'loanIncoming',c[2])}>${esc(rec.code)}</td>
@@ -845,6 +885,7 @@ function renderKahana() {
     const c = SECT_KEYS.kahana;
     tbody.innerHTML = kahana.map((item, i) => {
         return `<tr ${rowStyle(item)}>
+        <td class="cb-col"><input type="checkbox" class="sel-row" data-tbl="kahana" data-idx="${i}" onchange="updateBulkBar('kahana')"></td>
         <td ${tdStyle(item,'kahana',c[0])}>${esc(item.name)}</td>
         <td ${tdStyle(item,'kahana',c[1])}>${esc(item.category || '')}</td>
         <td ${tdStyle(item,'kahana',c[2])}>${esc(item.details || '')}</td>
@@ -959,8 +1000,10 @@ function setupTableFilters() {
         const table = wrap.querySelector('table');
         const toolbar = document.createElement('div');
         toolbar.className = 'table-toolbar';
+        const wrapId = 'tw_' + Math.random().toString(36).slice(2,8);
+        wrap.dataset.wrapId = wrapId;
         toolbar.innerHTML = `
-            <input type="text" class="search-input" placeholder="🔍 بحث في الجدول..." autocomplete="off">
+            <button class="search-btn-square" onclick="showSearchModal('${wrapId}')" title="بحث"><i class="fas fa-search"></i></button>
             <select class="filter-cat"><option value="">كل التصنيفات</option></select>
             <div class="col-picker-btn">
                 <button class="col-toggle"><i class="fas fa-table-cells"></i> الأعمدة <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
@@ -968,14 +1011,14 @@ function setupTableFilters() {
             </div>
         `;
         wrap.parentNode.insertBefore(toolbar, wrap);
-        const searchInput = toolbar.querySelector('.search-input');
+        const searchInput = { value: '' }; // search handled via modal
         const filterCat = toolbar.querySelector('.filter-cat');
         const colBtn = toolbar.querySelector('.col-picker-btn');
         const colToggle = toolbar.querySelector('.col-toggle');
         const colDropdown = toolbar.querySelector('.col-picker-dropdown');
+        const ths = table ? table.querySelectorAll('th') : [];
         const catIdx = (() => {
             if (!table) return -1;
-            const ths = table.querySelectorAll('th');
             for (let i = 0; i < ths.length; i++) {
                 if (ths[i].textContent.includes('تصنيف')) return i;
             }
@@ -994,7 +1037,6 @@ function setupTableFilters() {
             filterCat.appendChild(o);
         });
         // ---- Column visibility toggler ----
-        const ths = table ? table.querySelectorAll('th') : [];
         const colState = [];
         const alwaysIdx = new Set();
         const def = ['', 'العمليات', 'خيارات', 'الإجراءات'];
@@ -1042,9 +1084,11 @@ function setupTableFilters() {
         document.addEventListener('click', e => {
             if (!colBtn.contains(e.target)) colDropdown.classList.remove('open');
         });
-        // ---- Row filter ----
-        function doFilter() {
-            const q = searchInput.value.trim().toLowerCase();
+        // ---- Row filter (triggered by modal or cat change) ----
+        function doFilter(q) {
+            if (q === undefined) q = wrap.dataset.searchTerm || '';
+            q = q.trim().toLowerCase();
+            wrap.dataset.searchTerm = q;
             const cat = filterCat.value;
             Array.from(tbody.children).forEach(tr => {
                 if (tr.classList.contains('table-empty')) return;
@@ -1053,11 +1097,67 @@ function setupTableFilters() {
                 tr.style.display = match ? '' : 'none';
             });
         }
-        searchInput.addEventListener('input', doFilter);
         filterCat.addEventListener('change', doFilter);
     });
 }
 
+// ---- Search Modal ----
+function showSearchModal(wrapId) {
+    const wrap = document.querySelector(`[data-wrap-id="${wrapId}"]`);
+    if (!wrap) return;
+    const val = wrap.dataset.searchTerm || '';
+    const div = document.createElement('div');
+    div.className = 'search-overlay';
+    div.innerHTML = `
+        <div class="search-modal">
+            <div class="search-modal-header">
+                <i class="fas fa-search search-modal-icon"></i>
+                <input type="text" id="searchModalInput" value="${esc(val)}" placeholder="ابحث في الجدول..." autocomplete="off">
+                <button class="search-modal-close" onclick="closeSearchModal(this)"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="search-modal-footer">
+                <span id="searchModalCount" class="search-modal-count"></span>
+                <button class="search-modal-clear" onclick="clearSearch('${wrapId}')"><i class="fas fa-eraser"></i> مسح</button>
+            </div>
+        </div>`;
+    document.body.appendChild(div);
+    setTimeout(() => div.classList.add('open'), 10);
+    const inp = div.querySelector('#searchModalInput');
+    inp.focus();
+    inp.select();
+    inp.addEventListener('input', () => {
+        const fn = () => {
+            const tbody = wrap.querySelector('tbody');
+            if (!tbody) return;
+            const q = inp.value;
+            const cat = wrap.previousSibling ? wrap.previousSibling.querySelector('.filter-cat') : null;
+            const cv = cat ? cat.value : '';
+            let visible = 0;
+            Array.from(tbody.children).forEach(tr => {
+                if (tr.classList.contains('table-empty')) return;
+                const txt = tr.textContent.toLowerCase();
+                const match = (!q || txt.includes(q.toLowerCase())) && (!cv || tr.querySelector('td') || true);
+                tr.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            wrap.dataset.searchTerm = q;
+            const cnt = document.getElementById('searchModalCount');
+            if (cnt) cnt.textContent = q ? `${visible} نتيجة` : '';
+        };
+        clearTimeout(inp._t); inp._t = setTimeout(fn, 150);
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); closeSearchModal(inp); } });
+}
+function clearSearch(wrapId) {
+    const wrap = document.querySelector(`[data-wrap-id="${wrapId}"]`);
+    if (wrap) { wrap.dataset.searchTerm = ''; wrap.querySelectorAll('tbody tr').forEach(tr => tr.style.display = ''); }
+    const m = document.querySelector('#searchModalInput');
+    if (m) { m.value = ''; m.focus(); m.dispatchEvent(new Event('input')); }
+}
+function closeSearchModal(el) {
+    const div = el.closest('.search-overlay');
+    if (div) { div.classList.remove('open'); setTimeout(() => div.remove(), 250); }
+}
 // ---- Export Excel ----
 function exportExcel(section) {
     const wb = XLSX.utils.book_new();
@@ -1234,7 +1334,6 @@ function importExcel(event, section) {
                         category: String(row['التصنيف'] || row['category'] || ''),
                         details: String(row['التفاصيل'] || row['details'] || ''),
                         notes: String(row['ملاحظات'] || row['notes'] || ''),
-                        report: String(row['التقارير'] || row['report'] || '')
                     });
                     added++;
                 }
@@ -1321,10 +1420,6 @@ function showAddItemModal() {
             <div class="form-group full">
                 <label>ملاحظات</label>
                 <textarea id="item_notes"></textarea>
-            </div>
-            <div class="form-group full">
-                <label>التقارير</label>
-                <textarea id="item_report"></textarea>
             </div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveInventoryItem()">حفظ</button>
@@ -2078,7 +2173,6 @@ function showAddKahanaModal() {
             <div class="form-group"><label>التصنيف</label><select id="kahana_category"><option value="">اختر التصنيف</option><option>أجهزة طبية</option><option>كهربائية</option><option>أقمشة</option><option>أثاث</option><option>مستلزمات طبية</option><option>أدوية</option><option>مواد تنظيف</option><option>قرطاسية</option><option>أخرى</option></select></div>
             <div class="form-group full"><label>التفاصيل</label><textarea id="kahana_details"></textarea></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="kahana_notes"></textarea></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="kahana_report"></textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="saveKahana()">حفظ</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -2094,8 +2188,7 @@ function saveKahana() {
         id: generateId(), name,
         category: document.getElementById('kahana_category').value,
         details: document.getElementById('kahana_details').value.trim(),
-        notes: document.getElementById('kahana_notes').value.trim(),
-        report: document.getElementById('kahana_report').value.trim()
+        notes: document.getElementById('kahana_notes').value.trim()
     });
     save();
     renderAll();
@@ -2113,7 +2206,6 @@ function editKahana(index) {
             ).join('')}</select></div>
             <div class="form-group full"><label>التفاصيل</label><textarea id="kahana_details">${esc(item.details || '')}</textarea></div>
             <div class="form-group full"><label>ملاحظات</label><textarea id="kahana_notes">${esc(item.notes || '')}</textarea></div>
-            <div class="form-group full"><label>التقارير</label><textarea id="kahana_report">${esc(item.report || '')}</textarea></div>
             <div class="form-actions">
                 <button class="save-btn" onclick="updateKahana(${index})">تحديث</button>
                 <button class="cancel-btn" onclick="closeModal()">إلغاء</button>
@@ -2129,8 +2221,7 @@ function updateKahana(index) {
         name: document.getElementById('kahana_name').value.trim(),
         category: document.getElementById('kahana_category').value,
         details: document.getElementById('kahana_details').value.trim(),
-        notes: document.getElementById('kahana_notes').value.trim(),
-        report: document.getElementById('kahana_report').value.trim()
+        notes: document.getElementById('kahana_notes').value.trim()
     });
     save();
     renderAll();
@@ -2187,7 +2278,7 @@ function toggleSidebar() {
 
 // ---- 3D Tilt Effect for all buttons ----
 function initTilt() {
-  const SEL = '.btn, .btn-action, .action-btn, .save-btn, .cancel-btn, .sub-tab, .tab, .topbar-btn, .theme-toggle-btn, .navbar-btn, .mobile-menu-btn, .search-code-btn, .modal .close-btn, .login-btn, .cp-hero-tab, .cp-actions button';
+  const SEL = '.btn, .btn-action, .action-btn, .save-btn, .cancel-btn, .sub-tab, .tab, .topbar-btn, .theme-toggle-btn, .navbar-btn, .mobile-menu-btn, .search-code-btn, .search-btn-square, .modal .close-btn, .login-btn, .cp-hero-tab, .cp-actions button';
   const MAX = 10;
   if (!window.matchMedia('(hover: hover)').matches) return;
 
